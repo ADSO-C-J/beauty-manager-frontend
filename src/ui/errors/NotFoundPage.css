@@ -1,0 +1,145 @@
+/* ── Root ──────────────────────────────────────────────── */
+.nf-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Card ──────────────────────────────────────────────── */
+.nf-card {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 3rem 4rem;
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+  animation: nf-fade-in 0.7s ease both;
+}
+
+@keyframes nf-fade-in {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 404 number ────────────────────────────────────────── */
+.nf-code {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: clamp(5rem, 15vw, 9rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin-bottom: 1.5rem;
+}
+
+.nf-four {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: nf-pulse 3s ease-in-out infinite;
+}
+
+.nf-zero {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: nf-pulse 3s ease-in-out infinite 0.4s;
+}
+
+@keyframes nf-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.06); }
+}
+
+/* ── Divider ───────────────────────────────────────────── */
+.nf-divider {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #f5576c, #4facfe);
+  border-radius: 999px;
+  margin: 0 auto 1.5rem;
+}
+
+/* ── Text ──────────────────────────────────────────────── */
+.nf-title {
+  color: #ffffff;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+
+.nf-subtitle {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1rem;
+  margin: 0 0 2rem;
+}
+
+/* ── Button ────────────────────────────────────────────── */
+.nf-btn {
+  display: inline-block;
+  padding: 0.8rem 2.2rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f5576c, #f093fb);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 25px rgba(245, 87, 108, 0.45);
+}
+
+.nf-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 35px rgba(245, 87, 108, 0.6);
+}
+
+.nf-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Bubbles background ────────────────────────────────── */
+.nf-bubbles {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.nf-bubbles li {
+  position: absolute;
+  bottom: -150px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  animation: nf-rise 12s infinite ease-in;
+}
+
+.nf-bubbles li:nth-child(1) { left:  8%;  width: 50px;  height: 50px;  animation-duration: 11s; }
+.nf-bubbles li:nth-child(2) { left: 18%;  width: 20px;  height: 20px;  animation-duration: 14s; animation-delay: 2s; }
+.nf-bubbles li:nth-child(3) { left: 32%;  width: 70px;  height: 70px;  animation-duration: 10s; animation-delay: 4s; }
+.nf-bubbles li:nth-child(4) { left: 50%;  width: 30px;  height: 30px;  animation-duration: 13s; animation-delay: 1s; }
+.nf-bubbles li:nth-child(5) { left: 62%;  width: 55px;  height: 55px;  animation-duration:  9s; animation-delay: 3s; }
+.nf-bubbles li:nth-child(6) { left: 73%;  width: 25px;  height: 25px;  animation-duration: 15s; animation-delay: 5s; }
+.nf-bubbles li:nth-child(7) { left: 84%;  width: 45px;  height: 45px;  animation-duration: 11s; animation-delay: 2s; }
+.nf-bubbles li:nth-child(8) { left: 93%;  width: 35px;  height: 35px;  animation-duration: 12s; animation-delay: 6s; }
+
+@keyframes nf-rise {
+  0%   { bottom: -150px; transform: translateX(0)   rotate(0deg);   opacity: 0.8; }
+  50%  {                  transform: translateX(60px) rotate(180deg); }
+  100% { bottom: 110vh;   transform: translateX(-60px) rotate(360deg); opacity: 0; }
+}
