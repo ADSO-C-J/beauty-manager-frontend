@@ -1,4 +1,4 @@
-import { Auth } from '../../domain/auth/models/Auth';
+import type { Auth } from '../../domain/models/Auth';
 
 export interface AuthApiResponse {
   token: string;
