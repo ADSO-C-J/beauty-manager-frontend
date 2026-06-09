@@ -158,7 +158,7 @@ export default function Login() {
               </a>
             </div>
 
-            <Button type="submit" className="w-full bg-[#4A5568] hover:bg-[#2D3748]">
+            <Button type="submit" className="w-full bg-[#4A5568] text-white hover:bg-[#2D3748]">
               Iniciar sesión
             </Button>
 
