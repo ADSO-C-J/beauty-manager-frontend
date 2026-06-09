@@ -35,7 +35,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Link to="/register">
-                <Button className="bg-[#4A5568] hover:bg-[#2D3748]">Registro</Button>
+                <Button variant="ghost" className="text-[#4A5568] " >Registro</Button>
               </Link>
             </div>
 
@@ -64,7 +64,7 @@ export default function LandingPage() {
                   Iniciar sesión
                 </Link>
                 <Link to="/register">
-                  <Button className="w-full bg-[#4A5568] hover:bg-[#2D3748]">Registro</Button>
+                  <Button className="w-full bg-[#FFFFFF]">Registro</Button>
                 </Link>
               </nav>
             </div>
@@ -82,7 +82,7 @@ export default function LandingPage() {
             crecer tu negocio de belleza
           </p>
           <Link to="/register">
-            <Button className="bg-[#4A5568] hover:bg-[#2D3748] text-lg px-8 py-6">
+            <Button className="bg-[#4A5568] text-white px-8 py-6">
               Comenzar ahora
             </Button>
           </Link>
