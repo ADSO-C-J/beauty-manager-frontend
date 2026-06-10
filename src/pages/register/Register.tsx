@@ -1,17 +1,17 @@
 import { Link } from "react-router";
-import { Button } from "../../../../ui/components/button";
-import { Input } from "../../../../ui/components/input";
-import { Label } from "../../../../ui/components/label";
+import { Button } from "@components/button";
+import { Input } from "@components/input";
+import { Label } from "@components/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../../ui/components/select";
+} from "@components/select";
 import { useRegisterPresenter } from "./useRegisterPresenter";
 
-export default function Register() {
+const Register = () => {
   const { handleSubmit, updateField, formData, errors } = useRegisterPresenter();
 
   return (
@@ -124,3 +124,5 @@ export default function Register() {
     </div>
   );
 }
+
+export default Register;

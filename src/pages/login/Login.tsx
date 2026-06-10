@@ -1,19 +1,19 @@
 import { Link } from "react-router";
-import { Input } from "../../../../ui/components/input";
-import { Label } from "../../../../ui/components/label";
-import { Checkbox } from "../../../../ui/components/checkbox";
+import { Input } from "@components/input";
+import { Label } from "@components/label";
+import { Checkbox } from "@components/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../../ui/components/select";
-import { Button } from "../../../../ui/components/button";
+} from "@components/select";
+import { Button } from "@components/button";
 import { useLoginPresenter } from "./useLoginPresenter";
-import type { UserRole } from "../../application/state/authStore";
+import type { UserRole } from "@modules/auth/application/state/authStore";
 
- export default function Login() {
+ const Login = () => {
  const {
    role,
    roles,
@@ -128,3 +128,5 @@ import type { UserRole } from "../../application/state/authStore";
     </div>
   );
 }
+
+export default Login;

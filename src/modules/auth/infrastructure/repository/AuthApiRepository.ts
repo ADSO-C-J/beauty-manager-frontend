@@ -1,7 +1,7 @@
 import type { Auth } from '../../domain/models/Auth';
 import type { User } from '../../domain/models/User';
 import type { AuthRepository } from '../../domain/ports/AuthRepository';
-import { axiosClient } from '../../../../shared/http/axiosClient';
+import { axiosClient } from '@shared/http/axiosClient';
 import type { LoginDTO } from '../dtos/LoginDTO';
 import type { RegisterDTO } from '../dtos/RegisterDTO';
 import { authMapper, type AuthApiResponse } from '../mappers/authMapper';
