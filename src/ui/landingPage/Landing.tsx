@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { Menu, X, Calendar, Bell, Users } from "lucide-react";
 import { useState } from "react";
-import { Button } from "../components/button";
+import { Button } from "@components/button";
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

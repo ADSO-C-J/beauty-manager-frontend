@@ -1,0 +1,10 @@
+const Dashboard = () => {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <p>Bienvenido al dashboard de BeautyManager.</p>
+    </div>
+  );
+};
+
+export default Dashboard;

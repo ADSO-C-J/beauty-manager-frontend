@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Shield, Scissors, UserCircle, Users } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useAuthStore } from "../../application/state/authStore";
-import type { UserRole } from "../../application/state/authStore";
+import { useAuthStore } from "@modules/auth/application/state/authStore";
+import type { UserRole } from "@modules/auth/application/state/authStore";
 
 export const useLoginPresenter = () => {
   const navigate = useNavigate();

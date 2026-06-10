@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../app/router/routes';
+import { ROUTES } from '@app/router/routes';
 import './NotFoundPage.css';
 
 const NotFoundPage = () => {
@@ -31,7 +31,7 @@ const NotFoundPage = () => {
         <button
           id="btn-go-home"
           className="nf-btn"
-          onClick={() => navigate(ROUTES.HOME)}
+          onClick={() => navigate(ROUTES.LANDING)}
         >
           Volver al inicio
         </button>

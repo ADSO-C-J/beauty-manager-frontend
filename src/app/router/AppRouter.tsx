@@ -2,10 +2,11 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ROUTES } from './routes';
 import AuthGuard from './guards/AuthGuard';
 import GuestGuard from './guards/GuestGuard';
-import NotFoundPage from '../../ui/errors/NotFoundPage';
-import Login from '../../modules/auth/page/login/Login';
-import LandingPage from '../../ui/landingPage/Landing';
-import Register from '../../modules/auth/page/register/Register';
+import NotFoundPage from '@ui/errors/NotFoundPage';
+import Login from '@pages/login/Login';
+import LandingPage from '@ui/landingPage/Landing';
+import Register from '@pages/register/Register';
+import Dashboard from '@pages/dashboard/Dashboard';
 
 const AppRouter = () => {
   return (
@@ -20,7 +21,7 @@ const AppRouter = () => {
 
         {/* Rutas protegidas (requieren autenticación) */}
         <Route element={<AuthGuard />}>
-          <Route path={ROUTES.DASHBOARD} element={<div>Dashboard</div>} />
+          <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
         </Route>
 
         {/* Ruta 404 — debe ir siempre al final */}
