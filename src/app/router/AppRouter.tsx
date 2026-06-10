@@ -5,6 +5,7 @@ import GuestGuard from './guards/GuestGuard';
 import NotFoundPage from '../../ui/errors/NotFoundPage';
 import Login from '../../modules/auth/page/login/Login';
 import LandingPage from '../../ui/landingPage/Landing';
+import Register from '../../modules/auth/page/register/Register';
 
 const AppRouter = () => {
   return (
@@ -14,7 +15,7 @@ const AppRouter = () => {
         <Route element={<GuestGuard />}>
           <Route path={ROUTES.LANDING} element={<LandingPage />} />
           <Route path={ROUTES.LOGIN} element={<Login />} />
-          <Route path={ROUTES.REGISTER} element={<div>Register Page</div>} />
+          <Route path={ROUTES.REGISTER} element={<Register />} />
         </Route>
 
         {/* Rutas protegidas (requieren autenticación) */}

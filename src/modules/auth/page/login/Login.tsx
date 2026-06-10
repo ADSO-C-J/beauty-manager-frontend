@@ -1,5 +1,4 @@
-import { Link, useNavigate } from "react-router";
-import { useState } from "react";
+import { Link } from "react-router";
 import { Input } from "../../../../ui/components/input";
 import { Label } from "../../../../ui/components/label";
 import { Checkbox } from "../../../../ui/components/checkbox";
@@ -11,68 +10,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../../ui/components/select";
-import { Shield, Scissors, UserCircle, Users } from "lucide-react";
 import { Button } from "../../../../ui/components/button";
+import { useLoginPresenter } from "./useLoginPresenter";
 
 export default function Login() {
-  const navigate = useNavigate();
-  // const login = useAuthStore((state) => state.login);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<string>("estilista");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-
-  const roles = [
-    {
-      value: "administrador" as string,
-      label: "Administrador",
-      icon: Shield,
-      description: "Acceso completo al sistema",
-    },
-    {
-      value: "estilista" as string,
-      label: "Estilista",
-      icon: Scissors,
-      description: "Gestión de citas y clientes",
-    },
-    {
-      value: "recepcionista" as string,
-      label: "Recepcionista",
-      icon: Users,
-      description: "Gestión de citas",
-    },
-    {
-      value: "cliente" as string,
-      label: "Cliente",
-      icon: UserCircle,
-      description: "Consulta de citas y análisis",
-    },
-  ];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: { email?: string; password?: string } = {};
-
-    if (!email) {
-      newErrors.email = "El email es requerido";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email inválido";
-    }
-
-    if (!password) {
-      newErrors.password = "La contraseña es requerida";
-    } else if (password.length < 6) {
-      newErrors.password = "La contraseña debe tener al menos 6 caracteres";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    // await login(email, password, role);
-    navigate("/dashboard");
-  };
+ const {
+   role,
+   roles,
+   email,
+   errors,
+   setRole,
+   setEmail,
+   password,
+   setErrors,
+   setPassword,
+   handleSubmit,
+  } = useLoginPresenter();
 
   return (
     <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
