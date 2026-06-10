@@ -1,29 +1,59 @@
-import { useState } from 'react';
-import { Register } from '../../domain/use-cases/Register';
-import { AuthApiRepository } from '../../infrastructure/repository/AuthApiRepository';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const authRepository = new AuthApiRepository();
-const registerUseCase = new Register(authRepository);
+
 
 export const useRegisterPresenter = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    role: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleRegister = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(false);
-    try {
-      await registerUseCase.execute(name, email, password);
-      setSuccess(true);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al registrar usuario';
-      setError(message);
-    } finally {
-      setIsLoading(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name) newErrors.name = "El nombre es requerido";
+    if (!formData.email) {
+      newErrors.email = "El email es requerido";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email inválido";
     }
+    if (!formData.phone) newErrors.phone = "El teléfono es requerido";
+    if (!formData.password) {
+      newErrors.password = "La contraseña es requerida";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "La contraseña debe tener al menos 6 caracteres";
+    }
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Las contraseñas no coinciden";
+    }
+    if (!formData.role) newErrors.role = "Selecciona un rol";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    navigate("/dashboard");
   };
 
-  return { handleRegister, isLoading, error, success };
+  const updateField = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value });
+    setErrors({ ...errors, [field]: "" });
+  };
+
+
+  return {
+    handleSubmit,
+    updateField,
+    formData,
+    errors
+   };
 };
