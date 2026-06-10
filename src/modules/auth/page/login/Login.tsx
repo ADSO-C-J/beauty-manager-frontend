@@ -2,7 +2,6 @@ import { Link } from "react-router";
 import { Input } from "../../../../ui/components/input";
 import { Label } from "../../../../ui/components/label";
 import { Checkbox } from "../../../../ui/components/checkbox";
-// import { useAuthStore, UserRole } from "../stores/authStore";
 import {
   Select,
   SelectContent,
@@ -12,8 +11,9 @@ import {
 } from "../../../../ui/components/select";
 import { Button } from "../../../../ui/components/button";
 import { useLoginPresenter } from "./useLoginPresenter";
+import type { UserRole } from "../../application/state/authStore";
 
-export default function Login() {
+ export default function Login() {
  const {
    role,
    roles,
@@ -25,6 +25,7 @@ export default function Login() {
    setErrors,
    setPassword,
    handleSubmit,
+   isLoading,
   } = useLoginPresenter();
 
   return (
@@ -43,7 +44,7 @@ export default function Login() {
               <Label htmlFor="role" className="mb-2">
                 Tipo de usuario
               </Label>
-              <Select value={role} onValueChange={(value) => setRole(value as string)}>
+              <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -111,8 +112,8 @@ export default function Login() {
               </a>
             </div>
 
-            <Button type="submit" className="w-full bg-[#4A5568] text-white hover:bg-[#2D3748]">
-              Iniciar sesión
+            <Button type="submit" disabled={isLoading} className="w-full bg-[#4A5568] text-white hover:bg-[#2D3748] disabled:opacity-50">
+              {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
             </Button>
 
             <p className="text-center text-sm text-[#4A5568]">

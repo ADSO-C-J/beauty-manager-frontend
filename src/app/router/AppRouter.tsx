@@ -20,7 +20,7 @@ const AppRouter = () => {
 
         {/* Rutas protegidas (requieren autenticación) */}
         <Route element={<AuthGuard />}>
-          <Route path={ROUTES.HOME} element={<div>Home Page</div>} />
+          <Route path={ROUTES.DASHBOARD} element={<div>Dashboard</div>} />
         </Route>
 
         {/* Ruta 404 — debe ir siempre al final */}

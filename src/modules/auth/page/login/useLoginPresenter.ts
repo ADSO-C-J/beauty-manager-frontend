@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Shield, Scissors, UserCircle, Users } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useAuthStore } from "../../application/state/authStore";
+import type { UserRole } from "../../application/state/authStore";
 
 export const useLoginPresenter = () => {
   const navigate = useNavigate();
-  // const login = useAuthStore((state) => state.login);
+  const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<string>("estilista");
+  const [role, setRole] = useState<UserRole>("estilista");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const roles = [
@@ -58,7 +61,7 @@ export const useLoginPresenter = () => {
       return;
     }
 
-    // await login(email, password, role);
+    await login(email, password, role);
     navigate("/dashboard");
   };
 
@@ -72,7 +75,8 @@ export const useLoginPresenter = () => {
     setPassword,
     errors,
     roles,
-    setErrors
+    setErrors,
+    isLoading
   }
 }
 
