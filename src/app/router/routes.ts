@@ -3,4 +3,10 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
+  DASHBOARD_APPOINTMENTS: '/dashboard/appointments',
+  DASHBOARD_CLIENTS: '/dashboard/clients',
+  DASHBOARD_SERVICES: '/dashboard/services',
+  DASHBOARD_FACIAL_ANALYSIS: '/dashboard/facial-analysis',
+  DASHBOARD_REPORTS: '/dashboard/reports',
+  DASHBOARD_SETTINGS: '/dashboard/settings',
 };
