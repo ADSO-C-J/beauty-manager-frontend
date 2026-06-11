@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { ROUTES } from "@app/router/routes";
 
 export type UserRole = "administrador" | "estilista" | "recepcionista" | "cliente";
 
@@ -96,31 +97,31 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 export const rolePermissions: Record<UserRole, string[]> = {
   administrador: [
-    "/dashboard",
-    "/dashboard/appointments",
-    "/dashboard/clients",
-    "/dashboard/services",
-    "/dashboard/facial-analysis",
-    "/dashboard/reports",
-    "/dashboard/settings",
+    ROUTES.DASHBOARD,
+    ROUTES.DASHBOARD_APPOINTMENTS,
+    ROUTES.DASHBOARD_CLIENTS,
+    ROUTES.DASHBOARD_SERVICES,
+    ROUTES.DASHBOARD_FACIAL_ANALYSIS,
+    ROUTES.DASHBOARD_REPORTS,
+    ROUTES.DASHBOARD_SETTINGS,
   ],
   estilista: [
-    "/dashboard",
-    "/dashboard/appointments",
-    "/dashboard/clients",
-    "/dashboard/services",
-    "/dashboard/facial-analysis",
+    ROUTES.DASHBOARD,
+    ROUTES.DASHBOARD_APPOINTMENTS,
+    ROUTES.DASHBOARD_CLIENTS,
+    ROUTES.DASHBOARD_SERVICES,
+    ROUTES.DASHBOARD_FACIAL_ANALYSIS,
   ],
   recepcionista: [
-    "/dashboard",
-    "/dashboard/appointments",
-    "/dashboard/clients",
-    "/dashboard/services",
+    ROUTES.DASHBOARD,
+    ROUTES.DASHBOARD_APPOINTMENTS,
+    ROUTES.DASHBOARD_CLIENTS,
+    ROUTES.DASHBOARD_SERVICES,
   ],
   cliente: [
-    "/dashboard",
-    "/dashboard/appointments",
-    "/dashboard/facial-analysis",
+    ROUTES.DASHBOARD,
+    ROUTES.DASHBOARD_APPOINTMENTS,
+    ROUTES.DASHBOARD_FACIAL_ANALYSIS,
   ],
 };
 
@@ -129,7 +130,7 @@ export function hasPermission(role: UserRole | undefined, path: string): boolean
   return rolePermissions[role].some((allowedPath) => {
     if (path === allowedPath) return true;
     // Sub-path match only for specific routes (not the base /dashboard)
-    if (allowedPath === "/dashboard") return false;
+    if (allowedPath === ROUTES.DASHBOARD) return false;
     return path.startsWith(allowedPath + "/");
   });
 }

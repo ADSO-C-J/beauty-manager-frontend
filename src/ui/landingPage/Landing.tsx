@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Menu, X, Calendar, Bell, Users } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@components/button";
+import { ROUTES } from "@app/router/routes";
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,12 +30,12 @@ export default function LandingPage() {
             </nav>
 
             <div className="hidden md:flex gap-4">
-              <Link to="/login">
+              <Link to={ROUTES.LOGIN}>
                 <Button variant="ghost" className="text-[#4A5568]">
                   Iniciar sesión
                 </Button>
               </Link>
-              <Link to="/register">
+              <Link to={ROUTES.REGISTER}>
                 <Button variant="ghost" className="text-[#4A5568] " >Registro</Button>
               </Link>
             </div>
@@ -60,10 +61,10 @@ export default function LandingPage() {
                 <a href="#contacto" className="text-[#4A5568] hover:text-[#2D3748]">
                   Contacto
                 </a>
-                <Link to="/login" className="text-[#4A5568] hover:text-[#2D3748]">
+                <Link to={ROUTES.LOGIN} className="text-[#4A5568] hover:text-[#2D3748]">
                   Iniciar sesión
                 </Link>
-                <Link to="/register">
+                <Link to={ROUTES.REGISTER}>
                   <Button className="w-full bg-[#FFFFFF]">Registro</Button>
                 </Link>
               </nav>
@@ -81,7 +82,7 @@ export default function LandingPage() {
             Sistema integral de gestión que te ayuda a organizar citas, administrar clientes y hacer
             crecer tu negocio de belleza
           </p>
-          <Link to="/register">
+          <Link to={ROUTES.REGISTER}>
             <Button className="bg-[#4A5568] text-white px-8 py-6">
               Comenzar ahora
             </Button>

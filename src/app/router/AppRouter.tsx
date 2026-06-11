@@ -11,22 +11,23 @@ import FacialAnalysis from '@pages/dashboard/facial-analysis/FacialAnalysis';
 import Reports from '@pages/dashboard/reports/Reports';
 import Settings from '@pages/dashboard/settings/Settings';
 import RoleBasedRoute from "./RoleBasedRoute";
+import { ROUTES } from "./routes";
 
 export const router = createBrowserRouter([
   {
-    path: "/",
+    path: ROUTES.LANDING,
     element: <LandingPage />,
   },
   {
-    path: "/login",
+    path: ROUTES.LOGIN,
     element: <Login />,
   },
   {
-    path: "/register",
+    path: ROUTES.REGISTER,
     element: <Register />,
   },
   {
-    path: "/dashboard",
+    path: ROUTES.DASHBOARD,
     element: (
       <RoleBasedRoute>
         <DashboardLayout />

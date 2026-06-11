@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { useAuthStore, rolePermissions, type UserRole } from "@modules/auth/application/state/authStore";
 import { cn } from "@components/utils";
+import { ROUTES } from "@app/router/routes";
 
 interface NavItem {
   label: string;
@@ -22,13 +23,13 @@ interface NavItem {
 }
 
 const allNavItems: NavItem[] = [
-  { label: "Panel", icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Citas", icon: Calendar, path: "/dashboard/appointments" },
-  { label: "Clientes", icon: Users, path: "/dashboard/clients" },
-  { label: "Servicios", icon: Scissors, path: "/dashboard/services" },
-  { label: "Análisis Facial", icon: Scan, path: "/dashboard/facial-analysis" },
-  { label: "Reportes", icon: BarChart3, path: "/dashboard/reports" },
-  { label: "Configuración", icon: Settings, path: "/dashboard/settings" },
+  { label: "Panel", icon: LayoutDashboard, path: ROUTES.DASHBOARD },
+  { label: "Citas", icon: Calendar, path: ROUTES.DASHBOARD_APPOINTMENTS },
+  { label: "Clientes", icon: Users, path: ROUTES.DASHBOARD_CLIENTS },
+  { label: "Servicios", icon: Scissors, path: ROUTES.DASHBOARD_SERVICES },
+  { label: "Análisis Facial", icon: Scan, path: ROUTES.DASHBOARD_FACIAL_ANALYSIS },
+  { label: "Reportes", icon: BarChart3, path: ROUTES.DASHBOARD_REPORTS },
+  { label: "Configuración", icon: Settings, path: ROUTES.DASHBOARD_SETTINGS },
 ];
 
 export default function Sidebar() {
@@ -48,7 +49,7 @@ export default function Sidebar() {
   );
 
   const isActive = (path: string) => {
-    if (path === "/dashboard") return location.pathname === "/dashboard";
+    if (path === ROUTES.DASHBOARD) return location.pathname === ROUTES.DASHBOARD;
     return location.pathname.startsWith(path);
   };
 
@@ -81,7 +82,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           {!collapsed && (
-            <Link to="/dashboard" className="text-xl font-semibold text-[#2D3748] whitespace-nowrap">
+            <Link to={ROUTES.DASHBOARD} className="text-xl font-semibold text-[#2D3748] whitespace-nowrap">
               BeautyManager
             </Link>
           )}
@@ -118,7 +119,7 @@ export default function Sidebar() {
           <button
             onClick={() => {
               logout();
-              window.location.href = "/login";
+              window.location.href = ROUTES.LOGIN;
             }}
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-[#E53E3E] hover:bg-red-50"

@@ -3,6 +3,7 @@ import { Shield, Scissors, UserCircle, Users } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
 import type { UserRole } from "@modules/auth/application/state/authStore";
+import { ROUTES } from "@app/router/routes";
 
 export const useLoginPresenter = () => {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ export const useLoginPresenter = () => {
     }
 
     await login(email, password, role);
-    navigate("/dashboard");
+    navigate(ROUTES.DASHBOARD);
   };
 
   return {
