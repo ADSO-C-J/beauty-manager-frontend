@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@components/table";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
+import { ROUTES } from "@app/router/routes";
 
 const metrics = [
   {
@@ -202,7 +203,7 @@ export default function Dashboard() {
           </p>
         </div>
         {user?.role !== "cliente" && (
-          <Link to="/dashboard/appointments">
+          <Link to={ROUTES.DASHBOARD_APPOINTMENTS}>
             <Button className="bg-[#4A5568] hover:bg-[#2D3748] w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Nueva cita
@@ -235,7 +236,7 @@ export default function Dashboard() {
             <CardTitle className="text-xl text-[#2D3748]">
               {user?.role === "cliente" ? "Mis citas" : "Citas recientes"}
             </CardTitle>
-            <Link to="/dashboard/appointments">
+            <Link to={ROUTES.DASHBOARD_APPOINTMENTS}>
               <Button variant="outline" className="w-full sm:w-auto">
                 Ver todas las citas
               </Button>
@@ -297,7 +298,7 @@ export default function Dashboard() {
       </Card>
 
       {user?.role !== "cliente" && (
-        <Link to="/dashboard/appointments" className="md:hidden">
+        <Link to={ROUTES.DASHBOARD_APPOINTMENTS} className="md:hidden">
           <Button className="fixed bottom-[72px] right-4 rounded-full w-14 h-14 shadow-lg bg-[#4A5568] hover:bg-[#2D3748]">
             <Plus className="w-6 h-6" />
           </Button>
@@ -310,13 +311,13 @@ export default function Dashboard() {
             <CardTitle className="text-xl text-[#2D3748]">Acciones rápidas</CardTitle>
           </CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-4">
-            <Link to="/dashboard/facial-analysis">
+            <Link to={ROUTES.DASHBOARD_FACIAL_ANALYSIS}>
               <Button className="w-full h-24 bg-[#48BB78] hover:bg-[#38A169] flex flex-col gap-2">
                 <Scan className="w-8 h-8" />
                 <span>Análisis Facial</span>
               </Button>
             </Link>
-            <Link to="/dashboard/appointments">
+            <Link to={ROUTES.DASHBOARD_APPOINTMENTS}>
               <Button className="w-full h-24 bg-[#4A5568] hover:bg-[#2D3748] flex flex-col gap-2">
                 <Calendar className="w-8 h-8" />
                 <span>Mis Citas</span>

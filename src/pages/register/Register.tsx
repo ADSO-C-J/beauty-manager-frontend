@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@components/select";
 import { useRegisterPresenter } from "./useRegisterPresenter";
+import { ROUTES } from "@app/router/routes";
 
 const Register = () => {
   const { handleSubmit, updateField, formData, errors } = useRegisterPresenter();
@@ -18,7 +19,7 @@ const Register = () => {
     <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="text-3xl font-semibold text-[#2D3748]">
+          <Link to={ROUTES.LANDING} className="text-3xl font-semibold text-[#2D3748]">
             BeautyManager
           </Link>
           <p className="mt-2 text-[#4A5568]">Crea tu cuenta</p>
@@ -114,7 +115,7 @@ const Register = () => {
 
             <p className="text-center text-sm text-[#4A5568]">
               ¿Ya tienes cuenta?{" "}
-              <Link to="/login" className="text-[#2D3748] hover:underline font-medium">
+              <Link to={ROUTES.LOGIN} className="text-[#2D3748] hover:underline font-medium">
                 Inicia sesión
               </Link>
             </p>

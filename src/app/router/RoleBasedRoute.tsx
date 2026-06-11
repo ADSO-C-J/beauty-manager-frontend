@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router";
 import { hasPermission, useAuthStore } from "@modules/auth/application/state/authStore";
 import type { ReactNode } from "react";
+import { ROUTES } from "./routes";
 
 interface RoleBasedRouteProps {
   children: ReactNode;
@@ -23,11 +24,11 @@ export default function RoleBasedRoute({ children }: RoleBasedRouteProps) {
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
   if (!hasPermission(user.role, location.pathname)) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
 
   return <>{children}</>;

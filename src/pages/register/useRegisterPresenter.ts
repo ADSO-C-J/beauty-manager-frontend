@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@app/router/routes";
 
 
 
@@ -41,7 +42,7 @@ export const useRegisterPresenter = () => {
       return;
     }
 
-    navigate("/dashboard");
+    navigate(ROUTES.DASHBOARD);
   };
 
   const updateField = (field: string, value: string) => {

@@ -25,15 +25,16 @@ import {
 } from "@components/dropdown-menu";
 import { useAuthStore, hasPermission } from "@modules/auth/application/state/authStore";
 import { Badge } from "@components/badge";
+import { ROUTES } from "@app/router/routes";
 
 const allNavigation = [
-  { name: "Inicio", href: "/dashboard", icon: Home },
-  { name: "Citas", href: "/dashboard/appointments", icon: Calendar },
-  { name: "Clientes", href: "/dashboard/clients", icon: Users },
-  { name: "Servicios", href: "/dashboard/services", icon: Package },
-  { name: "Análisis Facial", href: "/dashboard/facial-analysis", icon: Scan },
-  { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
-  { name: "Configuración", href: "/dashboard/settings", icon: Settings },
+  { name: "Inicio", href: ROUTES.DASHBOARD, icon: Home },
+  { name: "Citas", href: ROUTES.DASHBOARD_APPOINTMENTS, icon: Calendar },
+  { name: "Clientes", href: ROUTES.DASHBOARD_CLIENTS, icon: Users },
+  { name: "Servicios", href: ROUTES.DASHBOARD_SERVICES, icon: Package },
+  { name: "Análisis Facial", href: ROUTES.DASHBOARD_FACIAL_ANALYSIS, icon: Scan },
+  { name: "Reportes", href: ROUTES.DASHBOARD_REPORTS, icon: BarChart3 },
+  { name: "Configuración", href: ROUTES.DASHBOARD_SETTINGS, icon: Settings },
 ];
 
 const roleLabels = {
@@ -64,7 +65,7 @@ export default function DashboardLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    navigate(ROUTES.LANDING);
   };
 
   return (
@@ -146,7 +147,7 @@ export default function DashboardLayout() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>Perfil</DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard/settings" className="w-full cursor-pointer">
+                    <Link to={ROUTES.DASHBOARD_SETTINGS} className="w-full cursor-pointer">
                       Configuración
                     </Link>
                   </DropdownMenuItem>
