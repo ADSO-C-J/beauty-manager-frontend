@@ -6,6 +6,7 @@ import DashboardLayout from '@pages/dashboard/DashboardLayout';
 import Dashboard from '@pages/dashboard/Dashboard';
 import Appointments from '@pages/dashboard/appointments/Appointments';
 import Clients from '@pages/dashboard/clients/Clients';
+import ClientDetail from '@pages/dashboard/clients/ClientDetail';
 import Services from '@pages/dashboard/services/Services';
 import FacialAnalysis from '@pages/dashboard/facial-analysis/FacialAnalysis';
 import Reports from '@pages/dashboard/reports/Reports';
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: "appointments", element: <Appointments /> },
       { path: "clients", element: <Clients /> },
+      { path: "clients/:id", element: <ClientDetail /> },
       { path: "services", element: <Services /> },
       { path: "facial-analysis", element: <FacialAnalysis /> },
       { path: "reports", element: <Reports /> },
