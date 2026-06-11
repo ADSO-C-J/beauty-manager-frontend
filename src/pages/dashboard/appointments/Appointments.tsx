@@ -41,7 +41,7 @@ const statusColors = {
   cancelada: "bg-[#F56565] text-white",
 };
 
-export default function Appointments() {
+const Appointments = () => {
   const {
     date,
     open,
@@ -422,3 +422,5 @@ export default function Appointments() {
     </div>
   );
 }
+
+export default Appointments;
