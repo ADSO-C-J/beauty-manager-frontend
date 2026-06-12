@@ -1,84 +1,39 @@
-import { Link, useNavigate } from "react-router";
-import { useState } from "react";
-import { Input } from "../../../../ui/components/input";
-import { Label } from "../../../../ui/components/label";
-import { Checkbox } from "../../../../ui/components/checkbox";
-// import { useAuthStore, UserRole } from "../stores/authStore";
+import { Link } from "react-router";
+import { Input } from "@components/input";
+import { Label } from "@components/label";
+import { Checkbox } from "@components/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../../ui/components/select";
-import { Shield, Scissors, UserCircle, Users } from "lucide-react";
-import { Button } from "../../../../ui/components/button";
+} from "@components/select";
+import { Button } from "@components/button";
+import { useLoginPresenter } from "./useLoginPresenter";
+import type { UserRole } from "@modules/auth/application/state/authStore";
+import { ROUTES } from "@app/router/routes";
 
-export default function Login() {
-  const navigate = useNavigate();
-  // const login = useAuthStore((state) => state.login);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<string>("estilista");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-
-  const roles = [
-    {
-      value: "administrador" as string,
-      label: "Administrador",
-      icon: Shield,
-      description: "Acceso completo al sistema",
-    },
-    {
-      value: "estilista" as string,
-      label: "Estilista",
-      icon: Scissors,
-      description: "Gestión de citas y clientes",
-    },
-    {
-      value: "recepcionista" as string,
-      label: "Recepcionista",
-      icon: Users,
-      description: "Gestión de citas",
-    },
-    {
-      value: "cliente" as string,
-      label: "Cliente",
-      icon: UserCircle,
-      description: "Consulta de citas y análisis",
-    },
-  ];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: { email?: string; password?: string } = {};
-
-    if (!email) {
-      newErrors.email = "El email es requerido";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email inválido";
-    }
-
-    if (!password) {
-      newErrors.password = "La contraseña es requerida";
-    } else if (password.length < 6) {
-      newErrors.password = "La contraseña debe tener al menos 6 caracteres";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    // await login(email, password, role);
-    navigate("/dashboard");
-  };
+ const Login = () => {
+ const {
+   role,
+   roles,
+   email,
+   errors,
+   setRole,
+   setEmail,
+   password,
+   setErrors,
+   setPassword,
+   handleSubmit,
+   isLoading,
+  } = useLoginPresenter();
 
   return (
     <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="text-3xl font-semibold text-[#2D3748]">
+          <Link to={ROUTES.LANDING} className="text-3xl font-semibold text-[#2D3748]">
             BeautyManager
           </Link>
           <p className="mt-2 text-[#4A5568]">Inicia sesión en tu cuenta</p>
@@ -90,7 +45,7 @@ export default function Login() {
               <Label htmlFor="role" className="mb-2">
                 Tipo de usuario
               </Label>
-              <Select value={role} onValueChange={(value) => setRole(value as string)}>
+              <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -158,13 +113,13 @@ export default function Login() {
               </a>
             </div>
 
-            <Button type="submit" className="w-full bg-[#4A5568] text-white hover:bg-[#2D3748]">
-              Iniciar sesión
+            <Button type="submit" disabled={isLoading} className="w-full bg-[#4A5568] text-white hover:bg-[#2D3748] disabled:opacity-50">
+              {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
             </Button>
 
             <p className="text-center text-sm text-[#4A5568]">
               ¿No tienes cuenta?{" "}
-              <Link to="/register" className="text-[#2D3748] hover:underline font-medium">
+              <Link to={ROUTES.REGISTER} className="text-[#2D3748] hover:underline font-medium">
                 Regístrate
               </Link>
             </p>
@@ -174,3 +129,5 @@ export default function Login() {
     </div>
   );
 }
+
+export default Login;
