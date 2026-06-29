@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ROUTES } from "@app/router/routes";
+import { registerUseCase } from "@modules/auth/application/registerUseCase";
 
 export type UserRole = "administrador" | "estilista" | "recepcionista" | "cliente";
 
@@ -7,6 +8,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   avatar?: string;
 }
@@ -16,6 +18,13 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    phone: string,
+    role: UserRole
+  ) => Promise<void>;
   logout: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -79,6 +88,42 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     set({ user: loggedUser, isLoading: false, isAuthenticated: true });
+  },
+
+  register: async (
+    name: string,
+    email: string,
+    password: string,
+    phone: string,
+    role: UserRole
+  ) => {
+    set({ isLoading: true });
+
+    try {
+      const created = await registerUseCase.execute(name, email, password, phone, role);
+
+      const registeredUser: User = {
+        id: created.id,
+        name: created.name,
+        email: created.email,
+        phone: created.phone ?? phone,
+        role: (created.role as UserRole) ?? role,
+      };
+
+      try {
+        localStorage.setItem(
+          "auth-storage",
+          JSON.stringify({ state: { user: registeredUser } })
+        );
+      } catch (error) {
+        console.error("Error saving to localStorage:", error);
+      }
+
+      set({ user: registeredUser, isLoading: false, isAuthenticated: true });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
   },
 
   logout: () => {

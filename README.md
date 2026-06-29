@@ -214,6 +214,58 @@ The Axios client is configured in `src/shared/http/axiosClient.ts`:
 - Automatically attaches the JWT token from `localStorage` to every request via a request interceptor
 - Content-Type is set to `application/json`
 
+## 🔐 Authentication Flow (Register Example)
+
+The **Register** feature is a concrete, end-to-end example of how data travels through every Clean Architecture layer — combining **Axios** (HTTP) and **Zustand** (state) without coupling the view to either.
+
+### Data flow
+
+```text
+Register.tsx (view)
+   ↓ uses
+useRegisterPresenter.ts (presenter — local validation & UI state)
+   ↓ calls register()
+authStore.ts → register()           [ZUSTAND: global auth state + isLoading]
+   ↓ executes
+registerUseCase → Register.execute() [USE CASE: pure business logic]
+   ↓ calls register()
+AuthApiRepository.register()         [INFRASTRUCTURE: Axios POST]
+   ↓ POST /auth/register
+Backend API (VITE_API_URL)
+```
+
+Each layer only knows the next one through an interface — the view never imports Axios, and the store never knows the API URL. Swapping Axios for `fetch` only touches `AuthApiRepository.ts`.
+
+### Files involved
+
+| Layer              | File (under `src/`)                                         | Responsibility                                                         |
+| ------------------ | ----------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Domain — model     | modules/auth/domain/models/User.ts                          | `User` entity (id, name, email, phone?, role?)                         |
+| Domain — port      | modules/auth/domain/ports/AuthRepository.ts                 | `register(name, email, password, phone, role)` contract                |
+| Domain — use case  | modules/auth/domain/use-cases/Register.ts                   | Pure business logic; depends only on the port                          |
+| Infra — DTO        | modules/auth/infrastructure/dtos/RegisterDTO.ts             | Exact request body sent to the API                                     |
+| Infra — repository | modules/auth/infrastructure/repository/AuthApiRepository.ts | Axios `POST /auth/register`                                            |
+| Infra — mapper     | modules/auth/infrastructure/mappers/registerMapper.ts       | Maps the API response into the `User` model                            |
+| Application        | modules/auth/application/registerUseCase.ts                 | Dependency injection (repository → use case)                           |
+| Application        | modules/auth/application/state/authStore.ts                 | Zustand `register` action: runs use case, stores user, sets auth flags |
+| Presentation       | pages/register/useRegisterPresenter.ts                      | Form validation, calls the store, handles errors                       |
+| Presentation       | pages/register/Register.tsx                                 | Form UI, loading and error states                                      |
+
+### Request payload
+
+```jsonc
+// POST /auth/register
+{
+  "name": "Juan Pérez",
+  "email": "juan@email.com",
+  "password": "******",
+  "phone": "+57 300 000 0000",
+  "role": "estilista" // selected profile: administrador | estilista | recepcionista | cliente
+}
+```
+
+On success the returned user is stored in the Zustand `authStore` (and `localStorage`), the user is marked authenticated, and the presenter redirects to `/dashboard`. On failure the presenter surfaces a general error and keeps the user on the form.
+
 ## 🧩 How to Create a New Module
 
 To create a new module (e.g., `appointments` for managing appointments), follow these steps:

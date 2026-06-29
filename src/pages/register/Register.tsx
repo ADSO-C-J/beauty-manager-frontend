@@ -13,7 +13,7 @@ import { useRegisterPresenter } from "./useRegisterPresenter";
 import { ROUTES } from "@app/router/routes";
 
 const Register = () => {
-  const { handleSubmit, updateField, formData, errors } = useRegisterPresenter();
+  const { handleSubmit, updateField, formData, errors, isLoading } = useRegisterPresenter();
 
   return (
     <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
@@ -109,8 +109,16 @@ const Register = () => {
               )}
             </div>
 
-            <Button type="submit" className="w-full bg-[#4A5568] text-white hover:bg-[#2D3748]">
-              Registrarse{" "}
+            {errors.general && (
+              <p className="text-[#F56565] text-sm text-center">{errors.general}</p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-[#4A5568] text-white hover:bg-[#2D3748] disabled:opacity-60"
+            >
+              {isLoading ? "Creando cuenta..." : "Registrarse"}
             </Button>
 
             <p className="text-center text-sm text-[#4A5568]">
