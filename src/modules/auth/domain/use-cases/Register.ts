@@ -8,7 +8,13 @@ export class Register {
     this.authRepository = authRepository;
   }
 
-  async execute(name: string, email: string, password: string): Promise<User> {
-    return this.authRepository.register(name, email, password);
+  async execute(
+    name: string,
+    email: string,
+    password: string,
+    phone: string,
+    role: string
+  ): Promise<User> {
+    return this.authRepository.register(name, email, password, phone, role);
   }
 }

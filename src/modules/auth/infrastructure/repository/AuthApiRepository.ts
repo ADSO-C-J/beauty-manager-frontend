@@ -14,8 +14,14 @@ export class AuthApiRepository implements AuthRepository {
     return authMapper(response.data);
   }
 
-  async register(name: string, email: string, password: string): Promise<User> {
-    const dto: RegisterDTO = { name, email, password };
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    phone: string,
+    role: string
+  ): Promise<User> {
+    const dto: RegisterDTO = { name, email, password, phone, role };
     const response = await axiosClient.post<RegisterApiResponse>('/auth/register', dto);
     return registerMapper(response.data);
   }

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@app/router/routes";
-
-
+import { useAuthStore } from "@modules/auth/application/state/authStore";
+import type { UserRole } from "@modules/auth/application/state/authStore";
 
 export const useRegisterPresenter = () => {
   const navigate = useNavigate();
+  const register = useAuthStore((state) => state.register);
+  const isLoading = useAuthStore((state) => state.isLoading);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,7 +18,7 @@ export const useRegisterPresenter = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
@@ -42,7 +44,21 @@ export const useRegisterPresenter = () => {
       return;
     }
 
-    navigate(ROUTES.DASHBOARD);
+    try {
+      await register(
+        formData.name,
+        formData.email,
+        formData.password,
+        formData.phone,
+        formData.role as UserRole
+      );
+      navigate(ROUTES.DASHBOARD);
+    } catch (error) {
+      console.error("Error al registrar el usuario:", error);
+      setErrors({
+        general: "No se pudo crear la cuenta. Inténtalo de nuevo más tarde.",
+      });
+    }
   };
 
   const updateField = (field: string, value: string) => {
@@ -50,11 +66,11 @@ export const useRegisterPresenter = () => {
     setErrors({ ...errors, [field]: "" });
   };
 
-
   return {
     handleSubmit,
     updateField,
     formData,
-    errors
-   };
+    errors,
+    isLoading,
+  };
 };
