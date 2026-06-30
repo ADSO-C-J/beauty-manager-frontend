@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isAxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@app/router/routes";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
@@ -55,9 +56,20 @@ export const useRegisterPresenter = () => {
       navigate(ROUTES.DASHBOARD);
     } catch (error) {
       console.error("Error al registrar el usuario:", error);
-      setErrors({
-        general: "No se pudo crear la cuenta. Inténtalo de nuevo más tarde.",
-      });
+      let message = "No se pudo crear la cuenta. Inténtalo de nuevo más tarde.";
+      if (isAxiosError(error)) {
+        if (error.response) {
+          // El backend respondió con un status de error (400, 409, 500...)
+          message =
+            (error.response.data as { message?: string })?.message ??
+            `Error del servidor (${error.response.status}).`;
+        } else if (error.request) {
+          // No hubo respuesta: backend apagado, URL/puerto incorrecto o CORS
+          message =
+            "No se pudo conectar con el servidor. Revisa que el backend esté encendido y la URL de la API (CORS / puerto).";
+        }
+      }
+      setErrors({ general: message });
     }
   };
 

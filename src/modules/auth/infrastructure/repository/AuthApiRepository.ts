@@ -22,7 +22,7 @@ export class AuthApiRepository implements AuthRepository {
     role: string
   ): Promise<User> {
     const dto: RegisterDTO = { name, email, password, phone, role };
-    const response = await axiosClient.post<RegisterApiResponse>('/auth/register', dto);
+    const response = await axiosClient.post<RegisterApiResponse>('/users', dto);
     return registerMapper(response.data);
   }
 }
