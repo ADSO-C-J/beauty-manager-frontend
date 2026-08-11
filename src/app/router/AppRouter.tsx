@@ -12,6 +12,7 @@ import FacialAnalysis from '@pages/dashboard/facial-analysis/FacialAnalysis';
 import Reports from '@pages/dashboard/reports/Reports';
 import Settings from '@pages/dashboard/settings/Settings';
 import RoleBasedRoute from "./RoleBasedRoute";
+import Scheduler from '@pages/dashboard/scheduler/scheduler';
 import { ROUTES } from "./routes";
 
 export const router = createBrowserRouter([
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       { path: "facial-analysis", element: <FacialAnalysis /> },
       { path: "reports", element: <Reports /> },
       { path: "settings", element: <Settings /> },
+      { path: "scheduler", element: <Scheduler /> },
     ],
   },
 ]);

@@ -10,4 +10,5 @@ export const ROUTES = {
   DASHBOARD_FACIAL_ANALYSIS: '/dashboard/facial-analysis',
   DASHBOARD_REPORTS: '/dashboard/reports',
   DASHBOARD_SETTINGS: '/dashboard/settings',
+  DASHBOARD_SCHEDULER: '/dashboard/scheduler',
 };
