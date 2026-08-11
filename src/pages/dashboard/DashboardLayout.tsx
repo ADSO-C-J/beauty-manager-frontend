@@ -31,6 +31,7 @@ const allNavigation = [
   { name: "Inicio", href: ROUTES.DASHBOARD, icon: Home },
   { name: "Citas", href: ROUTES.DASHBOARD_APPOINTMENTS, icon: Calendar },
   { name: "Clientes", href: ROUTES.DASHBOARD_CLIENTS, icon: Users },
+  {name: "Agenda", href: ROUTES.DASHBOARD_SCHEDULER, icon: Calendar},
   { name: "Servicios", href: ROUTES.DASHBOARD_SERVICES, icon: Package },
   { name: "Análisis Facial", href: ROUTES.DASHBOARD_FACIAL_ANALYSIS, icon: Scan },
   { name: "Reportes", href: ROUTES.DASHBOARD_REPORTS, icon: BarChart3 },
@@ -145,7 +146,6 @@ export default function DashboardLayout() {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel className="truncate">{user?.name}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Perfil</DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to={ROUTES.DASHBOARD_SETTINGS} className="w-full cursor-pointer">
                       Configuración
