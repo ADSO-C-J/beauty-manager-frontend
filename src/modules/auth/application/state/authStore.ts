@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ROUTES } from "@app/router/routes";
+import { loginUseCase } from "@modules/auth/application/loginUseCase";
 import { registerUseCase } from "@modules/auth/application/registerUseCase";
 
 export type UserRole = "administrador" | "estilista" | "recepcionista" | "cliente";
@@ -15,23 +16,28 @@ export interface User {
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string, role: UserRole) => Promise<void>;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
   register: (
     name: string,
     email: string,
     password: string,
-    phone: string,
-    role: UserRole
+    phone?: string
   ) => Promise<void>;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  clearError: () => void;
 }
+
+const TOKEN_KEY = "token";
+const STORAGE_KEY = "auth-storage";
 
 const getStoredUser = (): User | null => {
   try {
-    const stored = localStorage.getItem("auth-storage");
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
       return parsed.state?.user || null;
@@ -42,101 +48,115 @@ const getStoredUser = (): User | null => {
   return null;
 };
 
+const getStoredToken = (): string | null => {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch (error) {
+    console.error("Error loading token from storage:", error);
+    return null;
+  }
+};
+
 const storedUser = getStoredUser();
+const storedToken = getStoredToken();
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error === "object" && error !== null) {
+    const anyError = error as { response?: { data?: { message?: string } } };
+    if (anyError.response?.data?.message) {
+      return anyError.response.data.message;
+    }
+  }
+  if (error instanceof Error) return error.message;
+  return "Ocurrió un error inesperado";
+};
+
+const persistSession = (token: string, user: User) => {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { user } }));
+  } catch (error) {
+    console.error("Error saving session:", error);
+  }
+};
+
+const clearSession = () => {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.error("Error clearing session:", error);
+  }
+};
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: storedUser,
+  token: storedToken,
   isLoading: false,
-  isAuthenticated: storedUser !== null,
+  isAuthenticated: storedUser !== null && storedToken !== null,
+  error: null,
 
-  login: async (email: string, _password: string, role: UserRole) => {
-    set({ isLoading: true });
-
-    const mockUsers: Record<UserRole, User> = {
-      administrador: {
-        id: "1",
-        name: "María González",
-        email: email,
-        role: "administrador",
-      },
-      estilista: {
-        id: "2",
-        name: "Laura García",
-        email: email,
-        role: "estilista",
-      },
-      recepcionista: {
-        id: "3",
-        name: "Ana Martínez",
-        email: email,
-        role: "recepcionista",
-      },
-      cliente: {
-        id: "4",
-        name: "Carlos Ruiz",
-        email: email,
-        role: "cliente",
-      },
-    };
-
-    const loggedUser = mockUsers[role];
-
+  login: async (email: string, password: string) => {
+    set({ isLoading: true, error: null });
     try {
-      localStorage.setItem("auth-storage", JSON.stringify({ state: { user: loggedUser } }));
-    } catch (error) {
-      console.error("Error saving to localStorage:", error);
-    }
+      const auth = await loginUseCase.execute(email, password);
 
-    set({ user: loggedUser, isLoading: false, isAuthenticated: true });
-  },
-
-  register: async (
-    name: string,
-    email: string,
-    password: string,
-    phone: string,
-    role: UserRole
-  ) => {
-    set({ isLoading: true });
-
-    try {
-      const created = await registerUseCase.execute(name, email, password, phone, role);
-
-      const registeredUser: User = {
-        id: created.id,
-        name: created.name,
-        email: created.email,
-        phone: created.phone ?? phone,
-        role: (created.role as UserRole) ?? role,
+      const user: User = {
+        id: auth.user?.id ?? "",
+        name: auth.user?.name ?? email,
+        email: auth.user?.email ?? email,
+        phone: auth.user?.phone,
+        role: (auth.user?.role as UserRole) ?? "cliente",
+        avatar: auth.user?.avatar,
       };
 
-      try {
-        localStorage.setItem(
-          "auth-storage",
-          JSON.stringify({ state: { user: registeredUser } })
-        );
-      } catch (error) {
-        console.error("Error saving to localStorage:", error);
-      }
-
-      set({ user: registeredUser, isLoading: false, isAuthenticated: true });
+      persistSession(auth.token, user);
+      set({ user, token: auth.token, isLoading: false, isAuthenticated: true, error: null });
     } catch (error) {
-      set({ isLoading: false });
-      throw error;
+      const message = getErrorMessage(error);
+      set({ isLoading: false, isAuthenticated: false, error: message });
+      throw new Error(message);
+    }
+  },
+
+  register: async (name, email, password, phone) => {
+    set({ isLoading: true, error: null });
+    try {
+      // El backend fuerza rol 'cliente'; aquí no se envía rol.
+      await registerUseCase.execute(name, email, password, phone);
+
+      // Auto-login tras el registro para obtener el token JWT.
+      const auth = await loginUseCase.execute(email, password);
+
+      const user: User = {
+        id: auth.user?.id ?? "",
+        name: auth.user?.name ?? name,
+        email: auth.user?.email ?? email,
+        phone: auth.user?.phone,
+        role: (auth.user?.role as UserRole) ?? "cliente",
+        avatar: auth.user?.avatar,
+      };
+
+      persistSession(auth.token, user);
+      set({ user, token: auth.token, isLoading: false, isAuthenticated: true, error: null });
+    } catch (error) {
+      const message = getErrorMessage(error);
+      set({ isLoading: false, isAuthenticated: false, error: message });
+      throw new Error(message);
     }
   },
 
   logout: () => {
-    try {
-      localStorage.removeItem("auth-storage");
-    } catch (error) {
-      console.error("Error removing from localStorage:", error);
-    }
-    set({ user: null, isAuthenticated: false });
+    clearSession();
+    set({ user: null, token: null, isAuthenticated: false, error: null });
   },
 
   setLoading: (loading: boolean) => {
     set({ isLoading: loading });
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));
 

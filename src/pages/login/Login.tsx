@@ -2,25 +2,25 @@ import { Link } from "react-router";
 import { Input } from "@components/input";
 import { Label } from "@components/label";
 import { Checkbox } from "@components/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@components/select";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@components/select";
 import { Button } from "@components/button";
 import { useLoginPresenter } from "./useLoginPresenter";
-import type { UserRole } from "@modules/auth/application/state/authStore";
+// import type { UserRole } from "@modules/auth/application/state/authStore";
 import { ROUTES } from "@app/router/routes";
 
  const Login = () => {
  const {
-   role,
-   roles,
+  //  role,
+  //  roles,
    email,
    errors,
-   setRole,
+  //  setRole,
    setEmail,
    password,
    setErrors,
@@ -41,7 +41,7 @@ import { ROUTES } from "@app/router/routes";
 
         <div className="bg-white rounded-lg shadow-md p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+            {/* <div>
               <Label htmlFor="role" className="mb-2">
                 Tipo de usuario
               </Label>
@@ -63,7 +63,7 @@ import { ROUTES } from "@app/router/routes";
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
 
             <div>
               <Label htmlFor="email" className="mb-2">
@@ -112,6 +112,10 @@ import { ROUTES } from "@app/router/routes";
                 ¿Olvidaste tu contraseña?
               </a>
             </div>
+
+            {errors.general && (
+              <p className="text-[#F56565] text-sm text-center">{errors.general}</p>
+            )}
 
             <Button type="submit" disabled={isLoading} className="w-full bg-[#4A5568] text-white hover:bg-[#2D3748] disabled:opacity-50">
               {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}

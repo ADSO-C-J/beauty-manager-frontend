@@ -7,7 +7,7 @@ export interface AuthRepository {
     name: string,
     email: string,
     password: string,
-    phone: string,
-    role: string
+    phone?: string,
+    role?: string
   ): Promise<User>;
 }

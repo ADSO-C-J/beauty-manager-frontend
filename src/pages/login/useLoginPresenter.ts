@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Shield, Scissors, UserCircle, Users } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
-import type { UserRole } from "@modules/auth/application/state/authStore";
 import { ROUTES } from "@app/router/routes";
 
 export const useLoginPresenter = () => {
@@ -11,39 +9,13 @@ export const useLoginPresenter = () => {
   const isLoading = useAuthStore((state) => state.isLoading);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("estilista");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
-  const roles = [
-    {
-      value: "administrador" as string,
-      label: "Administrador",
-      icon: Shield,
-      description: "Acceso completo al sistema",
-    },
-    {
-      value: "estilista" as string,
-      label: "Estilista",
-      icon: Scissors,
-      description: "Gestión de citas y clientes",
-    },
-    {
-      value: "recepcionista" as string,
-      label: "Recepcionista",
-      icon: Users,
-      description: "Gestión de citas",
-    },
-    {
-      value: "cliente" as string,
-      label: "Cliente",
-      icon: UserCircle,
-      description: "Consulta de citas y análisis",
-    },
-  ];
+  const roles = [] as any[]; // Ya no se muestra; se mantiene la estructura vacía para no romper imports
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: { email?: string; password?: string; general?: string } = {};
 
     if (!email) {
       newErrors.email = "El email es requerido";
@@ -62,14 +34,19 @@ export const useLoginPresenter = () => {
       return;
     }
 
-    await login(email, password, role);
-    navigate(ROUTES.DASHBOARD);
+    try {
+      await login(email, password);
+      navigate(ROUTES.DASHBOARD);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo iniciar sesión";
+      setErrors({ general: message });
+    }
   };
 
   return {
     handleSubmit,
-    role,
-    setRole,
+    role: undefined,
+    setRole: () => {},
     email,
     setEmail,
     password,

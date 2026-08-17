@@ -18,10 +18,11 @@ export class AuthApiRepository implements AuthRepository {
     name: string,
     email: string,
     password: string,
-    phone: string,
-    role: string
+    phone?: string,
+    _role?: string
   ): Promise<User> {
-    const dto: RegisterDTO = { name, email, password, phone, role };
+    // El rol lo define el backend (registro público siempre crea 'cliente').
+    const dto: RegisterDTO = { name, email, password, phone };
     const response = await axiosClient.post<RegisterApiResponse>('/auth/register', dto);
     return registerMapper(response.data);
   }
