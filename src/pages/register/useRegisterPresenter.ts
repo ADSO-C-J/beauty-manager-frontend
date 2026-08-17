@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@app/router/routes";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
-import type { UserRole } from "@modules/auth/application/state/authStore";
 
 export const useRegisterPresenter = () => {
   const navigate = useNavigate();
@@ -37,7 +36,6 @@ export const useRegisterPresenter = () => {
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Las contraseñas no coinciden";
     }
-    if (!formData.role) newErrors.role = "Selecciona un rol";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -45,19 +43,18 @@ export const useRegisterPresenter = () => {
     }
 
     try {
+      // El rol lo determina el backend (siempre 'cliente' en registro público).
       await register(
         formData.name,
         formData.email,
         formData.password,
-        formData.phone,
-        formData.role as UserRole
+        formData.phone
       );
       navigate(ROUTES.DASHBOARD);
     } catch (error) {
-      console.error("Error al registrar el usuario:", error);
-      setErrors({
-        general: "No se pudo crear la cuenta. Inténtalo de nuevo más tarde.",
-      });
+      const message =
+        error instanceof Error ? error.message : "No se pudo crear la cuenta";
+      setErrors({ general: message });
     }
   };
 

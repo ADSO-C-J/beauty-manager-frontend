@@ -1,5 +1,4 @@
-import { Register } from '@modules/auth/domain/use-cases/Register';
-import { AuthApiRepository } from '@modules/auth/infrastructure/repository/AuthApiRepository';
+import { Register } from '../domain/use-cases/Register';
+import { authRepository } from './authRepository';
 
-const authRepository = new AuthApiRepository();
 export const registerUseCase = new Register(authRepository);

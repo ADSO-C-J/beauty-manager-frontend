@@ -2,13 +2,6 @@ import { Link } from "react-router";
 import { Button } from "@components/button";
 import { Input } from "@components/input";
 import { Label } from "@components/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@components/select";
 import { useRegisterPresenter } from "./useRegisterPresenter";
 import { ROUTES } from "@app/router/routes";
 
@@ -63,22 +56,6 @@ const Register = () => {
                 placeholder="+1 (555) 123-4567"
               />
               {errors.phone && <p className="text-[#F56565] text-sm mt-1">{errors.phone}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="role">Rol</Label>
-              <Select value={formData.role} onValueChange={(value) => updateField("role", value)}>
-                <SelectTrigger className={errors.role ? "border-[#F56565]" : ""}>
-                  <SelectValue placeholder="Selecciona tu rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cliente">Cliente</SelectItem>
-                  <SelectItem value="recepcionista">Recepcionista</SelectItem>
-                  <SelectItem value="estilista">Estilista</SelectItem>
-                  <SelectItem value="administrador">Administrador</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.role && <p className="text-[#F56565] text-sm mt-1">{errors.role}</p>}
             </div>
 
             <div>
