@@ -12,9 +12,8 @@ export class Register {
     name: string,
     email: string,
     password: string,
-    phone?: string,
-    role?: string
+    phone?: string
   ): Promise<User> {
-    return this.authRepository.register(name, email, password, phone, role);
+    return this.authRepository.register(name, email, password, phone);
   }
 }

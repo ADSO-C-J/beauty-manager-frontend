@@ -11,7 +11,7 @@ export const useLoginPresenter = () => {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
-  const roles = [] as any[]; // Ya no se muestra; se mantiene la estructura vacía para no romper imports
+  const roles: string[] = []; // Ya no se muestra; se mantiene la estructura vacía para no romper imports
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
