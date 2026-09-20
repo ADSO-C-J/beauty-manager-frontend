@@ -39,8 +39,10 @@ export default function CreateAppointmentModal({ open, selectedSlot, onClose, on
   const [saving, setSaving] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Resetear el formulario cuando se abre el modal
-  useEffect(() => {
+  // Resetear el formulario cuando se abre el modal (ajuste de estado durante el render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setClient("");
       setService("");
@@ -48,20 +50,21 @@ export default function CreateAppointmentModal({ open, selectedSlot, onClose, on
       setClientResults([]);
       setShowResults(false);
     }
-  }, [open]);
+  }
 
   // Buscar clientes al escribir (con debounce de 300ms)
   useEffect(() => {
-    if (client.trim().length < 2) {
-      setClientResults([]);
-      return;
-    }
+    const query = client.trim();
     const timer = setTimeout(() => {
+      if (query.length < 2) {
+        setClientResults([]);
+        return;
+      }
       clientService
-        .searchClients(client.trim())
+        .searchClients(query)
         .then(setClientResults)
         .catch((err) => console.error("Error buscando clientes:", err));
-    }, 300);
+    }, query.length < 2 ? 0 : 300);
     return () => clearTimeout(timer);
   }, [client]);
 

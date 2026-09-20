@@ -81,12 +81,26 @@ export function useSchedulerPresenter() {
     const sundayDate = new Date(currentMonday);
     sundayDate.setDate(currentMonday.getDate() + 6);
 
-    setLoading(true);
-    appointmentService
-      .getAppointments(toLocalStartOfDay(monday), toLocalEndOfDay(sundayDate))
-      .then((data) => setAppointments(data))
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => setLoading(true))
+      .then(() =>
+        appointmentService.getAppointments(
+          toLocalStartOfDay(monday),
+          toLocalEndOfDay(sundayDate),
+        ),
+      )
+      .then((data) => {
+        if (!cancelled) setAppointments(data);
+      })
       .catch((err) => console.error("Error cargando citas:", err))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentMonday]);
 
   // Valores derivados

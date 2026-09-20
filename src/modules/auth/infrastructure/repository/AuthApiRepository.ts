@@ -18,8 +18,7 @@ export class AuthApiRepository implements AuthRepository {
     name: string,
     email: string,
     password: string,
-    phone?: string,
-    _role?: string
+    phone?: string
   ): Promise<User> {
     // El rol lo define el backend (registro público siempre crea 'cliente').
     const dto: RegisterDTO = { name, email, password, phone };

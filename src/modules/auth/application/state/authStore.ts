@@ -117,7 +117,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (error) {
       const message = getErrorMessage(error);
       set({ isLoading: false, isAuthenticated: false, error: message });
-      throw new Error(message);
+      throw new Error(message, { cause: error });
     }
   },
 
@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (error) {
       const message = getErrorMessage(error);
       set({ isLoading: false, isAuthenticated: false, error: message });
-      throw new Error(message);
+      throw new Error(message, { cause: error });
     }
   },
 
