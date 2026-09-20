@@ -1,16 +1,28 @@
-import { Plus, Clock, DollarSign, X, Tag, FileText } from "lucide-react";
+import { Plus, Clock, DollarSign, X, Tag, FileText, Trash2 } from "lucide-react";
 import { Button } from "@components/button";
 import { Card, CardContent } from "@components/card";
 import { Badge } from "@components/badge";
-import { useServicesPresenter } from "./useServicesPresenter";
+import { useServicesPresenter, SERVICE_CATEGORIES } from "./useServicesPresenter";
+import type { ServiceCategory } from "@modules/services/domain/models/Service";
 
-const categories = ["Todos", "Cabello", "Manos", "Pies", "Caballeros"];
+const categories = ["Todos", ...SERVICE_CATEGORIES];
 
+/** minutos -> "45min" / "1.5h" */
+const formatDuration = (minutes: number) => {
+  if (minutes < 60) return `${minutes}min`;
+  const hours = minutes / 60;
+  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
+};
+
+/** numero -> "$25.00" */
+const formatPrice = (price: number) => `$${price.toFixed(2)}`;
 
 const Services = () => {
   const {
     form,
     errors,
+    saving,
+    loading,
     setForm,
     openEdit,
     modalMode,
@@ -20,6 +32,7 @@ const Services = () => {
     detailService,
     activeCategory,
     handleCloseForm,
+    deleteService,
     setDetailService,
     filteredServices,
     setActiveCategory,
@@ -54,6 +67,11 @@ const Services = () => {
       </div>
 
       {/* Service cards */}
+      {loading ? (
+        <p className="text-center text-[#718096] py-12">Cargando servicios...</p>
+      ) : filteredServices.length === 0 ? (
+        <p className="text-center text-[#718096] py-12">No hay servicios registrados.</p>
+      ) : (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredServices.map((service) => (
           <Card key={service.id} className="hover:shadow-lg transition-shadow">
@@ -74,11 +92,11 @@ const Services = () => {
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2 text-[#718096]">
                     <Clock className="w-4 h-4" />
-                    <span>{service.duration}</span>
+                    <span>{formatDuration(service.durationMin)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[#718096]">
                     <DollarSign className="w-4 h-4" />
-                    <span className="font-semibold text-[#2D3748]">{service.price}</span>
+                    <span className="font-semibold text-[#2D3748]">{formatPrice(service.price)}</span>
                   </div>
                 </div>
 
@@ -98,6 +116,7 @@ const Services = () => {
           </Card>
         ))}
       </div>
+      )}
 
       {/* Create / Edit modal */}
       {showFormModal && (
@@ -131,7 +150,9 @@ const Services = () => {
                 <label className="block text-sm font-medium text-[#2D3748] mb-1">Categoría</label>
                 <select
                   value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, category: e.target.value as ServiceCategory })
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4A5568]"
                 >
                   {categories
@@ -191,19 +212,6 @@ const Services = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="popular"
-                  checked={form.popular}
-                  onChange={(e) => setForm({ ...form, popular: e.target.checked })}
-                  className="w-4 h-4 accent-[#4A5568]"
-                />
-                <label htmlFor="popular" className="text-sm text-[#2D3748]">
-                  Marcar como popular
-                </label>
-              </div>
-
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <Button
                   type="button"
@@ -215,13 +223,14 @@ const Services = () => {
                 </Button>
                 <Button
                   type="submit"
+                  disabled={saving}
                   className="w-full bg-[#4A5568] hover:bg-[#2D3748]"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleSubmit(e as unknown as React.FormEvent);
-                  }}
                 >
-                  {modalMode === "create" ? "Guardar servicio" : "Guardar cambios"}
+                  {saving
+                    ? "Guardando..."
+                    : modalMode === "create"
+                      ? "Guardar servicio"
+                      : "Guardar cambios"}
                 </Button>
               </div>
             </form>
@@ -260,12 +269,16 @@ const Services = () => {
                 <div className="bg-gray-50 rounded-lg p-3 text-center">
                   <Clock className="w-4 h-4 text-[#718096] mx-auto mb-1" />
                   <p className="text-xs text-[#718096]">Duración</p>
-                  <p className="text-sm font-semibold text-[#2D3748]">{detailService.duration}</p>
+                  <p className="text-sm font-semibold text-[#2D3748]">
+                    {formatDuration(detailService.durationMin)}
+                  </p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3 text-center">
                   <DollarSign className="w-4 h-4 text-[#718096] mx-auto mb-1" />
                   <p className="text-xs text-[#718096]">Precio</p>
-                  <p className="text-sm font-semibold text-[#2D3748]">{detailService.price}</p>
+                  <p className="text-sm font-semibold text-[#2D3748]">
+                    {formatPrice(detailService.price)}
+                  </p>
                 </div>
               </div>
 
@@ -280,8 +293,17 @@ const Services = () => {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => setDetailService(null)}>
-                  Cerrar
+                <Button
+                  variant="outline"
+                  className="flex-1 text-[#E53E3E] hover:bg-red-50"
+                  onClick={() => {
+                    if (window.confirm(`¿Eliminar el servicio "${detailService.name}"?`)) {
+                      deleteService(detailService.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar
                 </Button>
                 <Button
                   className="flex-1 bg-[#4A5568] hover:bg-[#2D3748]"

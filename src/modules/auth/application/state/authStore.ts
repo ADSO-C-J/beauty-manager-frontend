@@ -12,6 +12,7 @@ export interface User {
   phone?: string;
   role: UserRole;
   avatar?: string;
+  businessId?: string;
 }
 
 interface AuthState {
@@ -108,6 +109,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         phone: auth.user?.phone,
         role: (auth.user?.role as UserRole) ?? "cliente",
         avatar: auth.user?.avatar,
+        businessId: auth.user?.businessId,
       };
 
       persistSession(auth.token, user);
@@ -135,6 +137,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         phone: auth.user?.phone,
         role: (auth.user?.role as UserRole) ?? "cliente",
         avatar: auth.user?.avatar,
+        businessId: auth.user?.businessId,
       };
 
       persistSession(auth.token, user);

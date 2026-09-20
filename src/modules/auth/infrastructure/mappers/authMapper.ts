@@ -7,6 +7,7 @@ export interface AuthApiUser {
   phone?: string;
   avatarUrl?: string;
   role?: string;
+  businessId?: string;
 }
 
 export interface AuthApiResponse {
@@ -28,6 +29,7 @@ export const authMapper = (response: AuthApiResponse): Auth => ({
         phone: response.user.phone,
         role: response.user.role,
         avatar: response.user.avatarUrl,
+        businessId: response.user.businessId,
       }
     : undefined,
 });

@@ -1,115 +1,87 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { serviceService } from "@modules/services/application/serviceServices";
+import type {
+  Service,
+  ServiceCategory,
+} from "@modules/services/domain/models/Service";
+import type { CreateServiceData } from "@modules/services/domain/ports/ServiceRepository";
 
-
-type Service = {
-  id: number;
-  name: string;
-  category: string;
-  duration: string;
-  price: string;
-  description: string;
-  popular: boolean;
-};
-
-const initialServices: Service[] = [
-  {
-    id: 1,
-    name: "Corte de cabello",
-    category: "Cabello",
-    duration: "45min",
-    price: "$25",
-    description: "Corte profesional de cabello para damas y caballeros",
-    popular: true,
-  },
-  {
-    id: 2,
-    name: "Tinte completo",
-    category: "Cabello",
-    duration: "2h",
-    price: "$80",
-    description: "Aplicación de tinte profesional en todo el cabello",
-    popular: true,
-  },
-  {
-    id: 3,
-    name: "Mechas/Luces",
-    category: "Cabello",
-    duration: "2.5h",
-    price: "$95",
-    description: "Aplicación de mechas o luces para dar dimensión al cabello",
-    popular: false,
-  },
-  {
-    id: 4,
-    name: "Manicure",
-    category: "Manos",
-    duration: "1h",
-    price: "$30",
-    description: "Cuidado y embellecimiento de uñas y manos",
-    popular: true,
-  },
-  {
-    id: 5,
-    name: "Pedicure",
-    category: "Pies",
-    duration: "1h",
-    price: "$35",
-    description: "Cuidado y embellecimiento de uñas y pies",
-    popular: false,
-  },
-  {
-    id: 6,
-    name: "Peinado especial",
-    category: "Cabello",
-    duration: "1.5h",
-    price: "$50",
-    description: "Peinado elaborado para eventos especiales",
-    popular: false,
-  },
-  {
-    id: 7,
-    name: "Corte + Barba",
-    category: "Caballeros",
-    duration: "1h",
-    price: "$35",
-    description: "Servicio completo de corte de cabello y arreglo de barba",
-    popular: true,
-  },
-  {
-    id: 8,
-    name: "Tratamiento capilar",
-    category: "Cabello",
-    duration: "1h",
-    price: "$45",
-    description: "Tratamiento de hidratación y reparación capilar",
-    popular: false,
-  },
+export const SERVICE_CATEGORIES: ServiceCategory[] = [
+  "Cabello",
+  "Manos",
+  "Pies",
+  "Caballeros",
+  "Facial",
+  "Otro",
 ];
 
 const emptyForm = {
   name: "",
-  category: "Cabello",
+  category: "Cabello" as ServiceCategory,
   duration: "",
   price: "",
   description: "",
-  popular: false,
 };
 
 type ModalMode = "create" | "edit";
 
+/** Convierte minutos a un texto legible: 45 -> "45min", 90 -> "1.5h", 120 -> "2h" */
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}min`;
+  const hours = minutes / 60;
+  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
+}
+
+/** Convierte un texto de duración ("45min", "2h", "1.5h", "90") a minutos */
+function parseDurationToMinutes(input: string): number | null {
+  const value = input.trim().toLowerCase();
+  if (!value) return null;
+  if (/^\d+$/.test(value)) return Number(value);
+
+  const hoursMatch = value.match(/^(\d+(?:\.\d+)?)\s*h/);
+  if (hoursMatch) return Math.round(Number(hoursMatch[1]) * 60);
+
+  const minMatch = value.match(/^(\d+(?:\.\d+)?)\s*min/);
+  if (minMatch) return Math.round(Number(minMatch[1]));
+
+  return null;
+}
+
 export const useServicesPresenter = () => {
-  const [serviceList, setServiceList] = useState<Service[]>(initialServices);
+  const [serviceList, setServiceList] = useState<Service[]>([]);
   const [activeCategory, setActiveCategory] = useState("Todos");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Form modal (create / edit)
   const [showFormModal, setShowFormModal] = useState(false);
   const [modalMode, setModalMode] = useState<ModalMode>("create");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Detail modal
   const [detailService, setDetailService] = useState<Service | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    serviceService
+      .getServices()
+      .then((data) => {
+        if (!cancelled) setServiceList(data);
+      })
+      .catch((err) => {
+        console.error("Error cargando servicios:", err);
+        toast.error("No se pudieron cargar los servicios");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredServices =
     activeCategory === "Todos"
@@ -122,7 +94,7 @@ export const useServicesPresenter = () => {
     setForm(emptyForm);
     setErrors({});
     setShowFormModal(true);
-  }
+  };
 
   const openEdit = (service: Service) => {
     setModalMode("edit");
@@ -130,14 +102,13 @@ export const useServicesPresenter = () => {
     setForm({
       name: service.name,
       category: service.category,
-      duration: service.duration,
-      price: service.price.replace("$", ""),
+      duration: formatDuration(service.durationMin),
+      price: String(service.price),
       description: service.description,
-      popular: service.popular,
     });
     setErrors({});
     setShowFormModal(true);
-  }
+  };
 
   const handleCloseForm = () => {
     setShowFormModal(false);
@@ -149,12 +120,15 @@ export const useServicesPresenter = () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "El nombre es obligatorio";
     if (!form.duration.trim()) e.duration = "La duración es obligatoria";
+    else if (parseDurationToMinutes(form.duration) === null)
+      e.duration = "Formato inválido (ej. 45min, 1.5h)";
     if (!form.price.trim()) e.price = "El precio es obligatorio";
-    if (!form.description.trim()) e.description = "La descripción es obligatoria";
+    else if (Number.isNaN(Number(form.price)) || Number(form.price) <= 0)
+      e.price = "El precio debe ser un número mayor a 0";
     return e;
-  }
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -162,62 +136,58 @@ export const useServicesPresenter = () => {
       return;
     }
 
-    const priceFormatted = form.price.trim().startsWith("$")
-      ? form.price.trim()
-      : `$${form.price.trim()}`;
+    const durationMin = parseDurationToMinutes(form.duration);
+    if (durationMin === null) return;
 
-    if (modalMode === "create") {
-      const newService: Service = {
-        id: Date.now(),
-        name: form.name.trim(),
-        category: form.category,
-        duration: form.duration.trim(),
-        price: priceFormatted,
-        description: form.description.trim(),
-        popular: form.popular,
-      };
-      setServiceList((prev) => [...prev, newService]);
-      setActiveCategory("Todos"); // make the new service always visible
-    } else {
-      setServiceList((prev) =>
-        prev.map((s) =>
-          s.id === editingId
-            ? {
-              ...s,
-              name: form.name.trim(),
-              category: form.category,
-              duration: form.duration.trim(),
-              price: priceFormatted,
-              description: form.description.trim(),
-              popular: form.popular,
-            }
-            : s,
-        ),
-      );
-      // Refresh detail panel if it's open for this service
-      if (detailService?.id === editingId) {
-        setDetailService((prev) =>
-          prev
-            ? {
-              ...prev,
-              name: form.name.trim(),
-              category: form.category,
-              duration: form.duration.trim(),
-              price: priceFormatted,
-              description: form.description.trim(),
-              popular: form.popular,
-            }
-            : prev,
+    const payload: CreateServiceData = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      category: form.category,
+      durationMin,
+      price: Number(form.price),
+    };
+
+    setSaving(true);
+    try {
+      if (modalMode === "create") {
+        const created = await serviceService.createService(payload);
+        setServiceList((prev) => [...prev, created]);
+        setActiveCategory("Todos");
+        toast.success("Servicio creado");
+      } else if (editingId) {
+        const updated = await serviceService.updateService(editingId, payload);
+        setServiceList((prev) =>
+          prev.map((s) => (s.id === editingId ? updated : s)),
         );
+        if (detailService?.id === editingId) setDetailService(updated);
+        toast.success("Servicio actualizado");
       }
+      handleCloseForm();
+    } catch (err) {
+      console.error("Error guardando servicio:", err);
+      toast.error("No se pudo guardar el servicio");
+    } finally {
+      setSaving(false);
     }
+  };
 
-    handleCloseForm();
-  }
+  const deleteService = async (id: string) => {
+    try {
+      await serviceService.deleteService(id);
+      setServiceList((prev) => prev.filter((s) => s.id !== id));
+      setDetailService((prev) => (prev?.id === id ? null : prev));
+      toast.success("Servicio eliminado");
+    } catch (err) {
+      console.error("Error eliminando servicio:", err);
+      toast.error("No se pudo eliminar el servicio");
+    }
+  };
 
   return {
     form,
     errors,
+    saving,
+    loading,
     setForm,
     openEdit,
     modalMode,
@@ -227,8 +197,9 @@ export const useServicesPresenter = () => {
     detailService,
     activeCategory,
     handleCloseForm,
+    deleteService,
     setDetailService,
     filteredServices,
     setActiveCategory,
   };
-}
+};
