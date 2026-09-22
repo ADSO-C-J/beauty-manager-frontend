@@ -175,6 +175,7 @@ export const rolePermissions: Record<UserRole, string[]> = {
     ROUTES.DASHBOARD_REPORTS,
     ROUTES.DASHBOARD_SETTINGS,
     ROUTES.DASHBOARD_SCHEDULER,
+    ROUTES.DASHBOARD_SCHEDULES,
   ],
   estilista: [
     ROUTES.DASHBOARD,
@@ -184,6 +185,7 @@ export const rolePermissions: Record<UserRole, string[]> = {
     ROUTES.DASHBOARD_FACIAL_ANALYSIS,
     ROUTES.DASHBOARD_REVIEWS,
     ROUTES.DASHBOARD_SCHEDULER,
+    ROUTES.DASHBOARD_SCHEDULES,
   ],
   recepcionista: [
     ROUTES.DASHBOARD,
@@ -192,6 +194,7 @@ export const rolePermissions: Record<UserRole, string[]> = {
     ROUTES.DASHBOARD_SERVICES,
     ROUTES.DASHBOARD_PAYMENTS,
     ROUTES.DASHBOARD_SCHEDULER,
+    ROUTES.DASHBOARD_SCHEDULES,
   ],
   cliente: [
     ROUTES.DASHBOARD,

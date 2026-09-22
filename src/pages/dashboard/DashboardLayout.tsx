@@ -11,6 +11,9 @@ import {
   Menu,
   X,
   Scan,
+  CreditCard,
+  Star,
+  CalendarClock,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@components/button";
@@ -34,6 +37,9 @@ const allNavigation = [
   {name: "Agenda", href: ROUTES.DASHBOARD_SCHEDULER, icon: Calendar},
   { name: "Servicios", href: ROUTES.DASHBOARD_SERVICES, icon: Package },
   { name: "Análisis Facial", href: ROUTES.DASHBOARD_FACIAL_ANALYSIS, icon: Scan },
+  { name: "Pagos", href: ROUTES.DASHBOARD_PAYMENTS, icon: CreditCard },
+  { name: "Reseñas", href: ROUTES.DASHBOARD_REVIEWS, icon: Star },
+  { name: "Horarios", href: ROUTES.DASHBOARD_SCHEDULES, icon: CalendarClock },
   { name: "Reportes", href: ROUTES.DASHBOARD_REPORTS, icon: BarChart3 },
   { name: "Configuración", href: ROUTES.DASHBOARD_SETTINGS, icon: Settings },
 ];

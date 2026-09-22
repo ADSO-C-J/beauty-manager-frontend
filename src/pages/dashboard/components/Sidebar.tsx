@@ -7,6 +7,7 @@ import {
   Scan,
   CreditCard,
   Star,
+  CalendarClock,
   BarChart3,
   Settings,
   LogOut,
@@ -32,6 +33,7 @@ const allNavItems: NavItem[] = [
   { label: "Análisis Facial", icon: Scan, path: ROUTES.DASHBOARD_FACIAL_ANALYSIS },
   { label: "Pagos", icon: CreditCard, path: ROUTES.DASHBOARD_PAYMENTS },
   { label: "Reseñas", icon: Star, path: ROUTES.DASHBOARD_REVIEWS },
+  { label: "Horarios", icon: CalendarClock, path: ROUTES.DASHBOARD_SCHEDULES },
   { label: "Reportes", icon: BarChart3, path: ROUTES.DASHBOARD_REPORTS },
   { label: "Configuración", icon: Settings, path: ROUTES.DASHBOARD_SETTINGS },
 ];
