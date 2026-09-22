@@ -9,6 +9,8 @@ import Clients from '@pages/dashboard/clients/Clients';
 import ClientDetail from '@pages/dashboard/clients/ClientDetail';
 import Services from '@pages/dashboard/services/Services';
 import FacialAnalysis from '@pages/dashboard/facial-analysis/FacialAnalysis';
+import Payments from '@pages/dashboard/payments/Payments';
+import Reviews from '@pages/dashboard/reviews/Reviews';
 import Reports from '@pages/dashboard/reports/Reports';
 import Settings from '@pages/dashboard/settings/Settings';
 import RoleBasedRoute from "./RoleBasedRoute";
@@ -42,6 +44,8 @@ export const router = createBrowserRouter([
       { path: "clients/:id", element: <ClientDetail /> },
       { path: "services", element: <Services /> },
       { path: "facial-analysis", element: <FacialAnalysis /> },
+      { path: "payments", element: <Payments /> },
+      { path: "reviews", element: <Reviews /> },
       { path: "reports", element: <Reports /> },
       { path: "settings", element: <Settings /> },
       { path: "scheduler", element: <Scheduler /> },

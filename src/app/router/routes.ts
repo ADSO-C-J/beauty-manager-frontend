@@ -8,6 +8,8 @@ export const ROUTES = {
   DASHBOARD_CLIENT_DETAIL: '/dashboard/clients/:id',
   DASHBOARD_SERVICES: '/dashboard/services',
   DASHBOARD_FACIAL_ANALYSIS: '/dashboard/facial-analysis',
+  DASHBOARD_PAYMENTS: '/dashboard/payments',
+  DASHBOARD_REVIEWS: '/dashboard/reviews',
   DASHBOARD_REPORTS: '/dashboard/reports',
   DASHBOARD_SETTINGS: '/dashboard/settings',
   DASHBOARD_SCHEDULER: '/dashboard/scheduler',
