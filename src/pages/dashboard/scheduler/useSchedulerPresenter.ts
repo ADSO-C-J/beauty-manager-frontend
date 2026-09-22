@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { appointmentService } from "@modules/appointments/application/appointmentServices";
+import { staffService } from "@modules/staff/application/staffServices";
 import type { CreateAppointmentData } from "@modules/appointments/domain/ports/AppointmentRepository";
 import type { Appointment } from "@modules/appointments/domain/models/Appointment";
 import type { Stylist } from "@modules/appointments/domain/models/Stylist";
@@ -67,12 +68,18 @@ export function useSchedulerPresenter() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Cargar estilistas al montar
+  // Cargar estilistas al montar (usar servicio de staff)
   useEffect(() => {
-    appointmentService
+    let cancelled = false;
+    staffService
       .getStylists()
-      .then((data) => setStylists(data))
+      .then((data) => {
+        if (!cancelled) setStylists(data);
+      })
       .catch((err) => console.error("Error cargando estilistas:", err));
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Cargar citas de la semana cuando cambia currentMonday
