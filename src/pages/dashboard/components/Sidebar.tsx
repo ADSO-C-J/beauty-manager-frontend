@@ -8,6 +8,7 @@ import {
   CreditCard,
   Star,
   CalendarClock,
+  UserCog,
   BarChart3,
   Settings,
   LogOut,
@@ -34,6 +35,7 @@ const allNavItems: NavItem[] = [
   { label: "Pagos", icon: CreditCard, path: ROUTES.DASHBOARD_PAYMENTS },
   { label: "Reseñas", icon: Star, path: ROUTES.DASHBOARD_REVIEWS },
   { label: "Horarios", icon: CalendarClock, path: ROUTES.DASHBOARD_SCHEDULES },
+  { label: "Usuarios", icon: UserCog, path: ROUTES.DASHBOARD_USERS },
   { label: "Reportes", icon: BarChart3, path: ROUTES.DASHBOARD_REPORTS },
   { label: "Configuración", icon: Settings, path: ROUTES.DASHBOARD_SETTINGS },
 ];

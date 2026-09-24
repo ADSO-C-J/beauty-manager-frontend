@@ -16,6 +16,7 @@ import Settings from '@pages/dashboard/settings/Settings';
 import RoleBasedRoute from "./RoleBasedRoute";
 import Scheduler from '@pages/dashboard/scheduler/scheduler';
 import Schedules from '@pages/dashboard/schedules/Schedules';
+import Users from '@pages/dashboard/users/Users';
 import { ROUTES } from "./routes";
 
 export const router = createBrowserRouter([
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
       { path: "settings", element: <Settings /> },
       { path: "scheduler", element: <Scheduler /> },
       { path: "schedules", element: <Schedules /> },
+      { path: "users", element: <Users /> },
     ],
   },
 ]);

@@ -176,6 +176,7 @@ export const rolePermissions: Record<UserRole, string[]> = {
     ROUTES.DASHBOARD_SETTINGS,
     ROUTES.DASHBOARD_SCHEDULER,
     ROUTES.DASHBOARD_SCHEDULES,
+    ROUTES.DASHBOARD_USERS,
   ],
   estilista: [
     ROUTES.DASHBOARD,
