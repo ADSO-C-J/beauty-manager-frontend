@@ -16,6 +16,7 @@ import {
   CalendarClock,
   UserCog,
   MonitorSmartphone,
+  History,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { notificationService } from "@modules/notifications/application/notificationServices";
@@ -46,6 +47,7 @@ const allNavigation = [
   { name: "Usuarios", href: ROUTES.DASHBOARD_USERS, icon: UserCog },
   { name: "Sesiones", href: ROUTES.DASHBOARD_SESSIONS, icon: MonitorSmartphone },
   { name: "Notificaciones", href: ROUTES.DASHBOARD_NOTIFICATIONS, icon: Bell },
+  { name: "Auditoría", href: ROUTES.DASHBOARD_AUDIT_LOGS, icon: History },
   { name: "Reportes", href: ROUTES.DASHBOARD_REPORTS, icon: BarChart3 },
   { name: "Configuración", href: ROUTES.DASHBOARD_SETTINGS, icon: Settings },
 ];

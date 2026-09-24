@@ -17,4 +17,5 @@ export const ROUTES = {
   DASHBOARD_USERS: '/dashboard/users',
   DASHBOARD_SESSIONS: '/dashboard/sessions',
   DASHBOARD_NOTIFICATIONS: '/dashboard/notifications',
+  DASHBOARD_AUDIT_LOGS: '/dashboard/audit-logs',
 };

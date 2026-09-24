@@ -11,6 +11,7 @@ import {
   UserCog,
   MonitorSmartphone,
   Bell,
+  History,
   BarChart3,
   Settings,
   LogOut,
@@ -40,6 +41,7 @@ const allNavItems: NavItem[] = [
   { label: "Usuarios", icon: UserCog, path: ROUTES.DASHBOARD_USERS },
   { label: "Sesiones", icon: MonitorSmartphone, path: ROUTES.DASHBOARD_SESSIONS },
   { label: "Notificaciones", icon: Bell, path: ROUTES.DASHBOARD_NOTIFICATIONS },
+  { label: "Auditoría", icon: History, path: ROUTES.DASHBOARD_AUDIT_LOGS },
   { label: "Reportes", icon: BarChart3, path: ROUTES.DASHBOARD_REPORTS },
   { label: "Configuración", icon: Settings, path: ROUTES.DASHBOARD_SETTINGS },
 ];
