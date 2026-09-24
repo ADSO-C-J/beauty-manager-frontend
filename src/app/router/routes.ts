@@ -15,4 +15,5 @@ export const ROUTES = {
   DASHBOARD_SCHEDULER: '/dashboard/scheduler',
   DASHBOARD_SCHEDULES: '/dashboard/schedules',
   DASHBOARD_USERS: '/dashboard/users',
+  DASHBOARD_SESSIONS: '/dashboard/sessions',
 };
