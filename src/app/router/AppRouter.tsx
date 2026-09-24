@@ -18,6 +18,7 @@ import Scheduler from '@pages/dashboard/scheduler/scheduler';
 import Schedules from '@pages/dashboard/schedules/Schedules';
 import Users from '@pages/dashboard/users/Users';
 import Sessions from '@pages/dashboard/sessions/Sessions';
+import Notifications from '@pages/dashboard/notifications/Notifications';
 import { ROUTES } from "./routes";
 
 export const router = createBrowserRouter([
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
       { path: "schedules", element: <Schedules /> },
       { path: "users", element: <Users /> },
       { path: "sessions", element: <Sessions /> },
+      { path: "notifications", element: <Notifications /> },
     ],
   },
 ]);

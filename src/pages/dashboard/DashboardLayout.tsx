@@ -17,7 +17,8 @@ import {
   UserCog,
   MonitorSmartphone,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { notificationService } from "@modules/notifications/application/notificationServices";
 import { Button } from "@components/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@components/avatar";
 import {
@@ -44,6 +45,7 @@ const allNavigation = [
   { name: "Horarios", href: ROUTES.DASHBOARD_SCHEDULES, icon: CalendarClock },
   { name: "Usuarios", href: ROUTES.DASHBOARD_USERS, icon: UserCog },
   { name: "Sesiones", href: ROUTES.DASHBOARD_SESSIONS, icon: MonitorSmartphone },
+  { name: "Notificaciones", href: ROUTES.DASHBOARD_NOTIFICATIONS, icon: Bell },
   { name: "Reportes", href: ROUTES.DASHBOARD_REPORTS, icon: BarChart3 },
   { name: "Configuración", href: ROUTES.DASHBOARD_SETTINGS, icon: Settings },
 ];
@@ -68,11 +70,27 @@ export default function DashboardLayout() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const navigation = useMemo(() => {
     if (!user) return [];
     return allNavigation.filter((item) => hasPermission(user.role, item.href));
   }, [user]);
+
+  // Contador de notificaciones sin leer para el badge de la campana.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => notificationService.getUnreadCount())
+      .then((count) => {
+        if (!cancelled) setUnreadCount(count);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [user, location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -133,10 +151,16 @@ export default function DashboardLayout() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <Button variant="ghost" size="icon" className="relative w-10 h-10">
-                <Bell className="w-5 h-5 text-[#4A5568]" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-[#F56565] rounded-full"></span>
-              </Button>
+              <Link to={ROUTES.DASHBOARD_NOTIFICATIONS}>
+                <Button variant="ghost" size="icon" className="relative w-10 h-10">
+                  <Bell className="w-5 h-5 text-[#4A5568]" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-[#F56565] text-white text-[10px] font-semibold rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
