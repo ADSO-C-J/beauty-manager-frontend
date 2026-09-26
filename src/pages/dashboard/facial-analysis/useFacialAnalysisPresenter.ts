@@ -1,8 +1,21 @@
-import { useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Sparkles, Palette, Scissors } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { toast } from "sonner";
+import { facialAnalysisService } from "@modules/facial-analysis/application/facialAnalysisServices";
+import {
+  skinToneLabel,
+  hairTypeLabel,
+  faceShapeLabel,
+} from "@modules/facial-analysis/infrastructure/mappers/facialAnalysisMapper";
+import type {
+  FacialAnalysis,
+  HairType,
+  FaceShape,
+  SkinTone,
+} from "@modules/facial-analysis/domain/models/FacialAnalysis";
+import { useAuthStore } from "@modules/auth/application/state/authStore";
 
 interface AnalysisResult {
   skinTone: string;
@@ -19,14 +32,68 @@ interface Recommendation {
   icon: LucideIcon;
 }
 
+// Detección local (no hay endpoint de inferencia en el backend):
+// los valores se eligen al azar entre las opciones válidas de la API y luego
+// se PERSISTEN en el backend mediante createAnalysis().
+const SKIN_TONE_OPTIONS: { value: SkinTone; hex: string }[] = [
+  { value: "muy_clara", hex: "#F5D5C3" },
+  { value: "clara", hex: "#E8B89A" },
+  { value: "morena_clara", hex: "#D9A97C" },
+  { value: "morena", hex: "#C89968" },
+  { value: "morena_oscura", hex: "#8D5524" },
+  { value: "oscura", hex: "#5C4033" },
+];
+
+const HAIR_TYPE_OPTIONS: HairType[] = ["lacio", "ondulado", "rizado", "crespo", "afro"];
+const FACE_SHAPE_OPTIONS: FaceShape[] = [
+  "ovalado",
+  "redondo",
+  "cuadrado",
+  "corazon",
+  "diamante",
+  "rectangular",
+];
+
+const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
 export const useFacialAnalysisPresenter = () => {
+  const user = useAuthStore((state) => state.user);
   const [image, setImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [history, setHistory] = useState<FacialAnalysis[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
+
+  const loadHistory = useCallback(async (isCancelled?: () => boolean) => {
+    const clientId = user?.id;
+    if (!clientId) return;
+    setIsLoadingHistory(true);
+    try {
+      const data = await facialAnalysisService.getAnalyses(clientId);
+      if (isCancelled?.()) return;
+      setHistory(data);
+    } catch {
+      // El historial es opcional; no bloquea la página si falla.
+    } finally {
+      if (!isCancelled?.()) setIsLoadingHistory(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const isCancelled = () => cancelled;
+    Promise.resolve()
+      .then(() => loadHistory(isCancelled))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadHistory]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,7 +137,7 @@ export const useFacialAnalysisPresenter = () => {
     }
   };
 
-  const analyzeImage = () => {
+  const analyzeImage = async () => {
     if (!image) {
       toast.error("Por favor, carga una imagen primero");
       return;
@@ -78,39 +145,74 @@ export const useFacialAnalysisPresenter = () => {
 
     setAnalyzing(true);
 
-    setTimeout(() => {
-      const skinTones = [
-        { name: "Piel Clara", hex: "#F5D5C3" },
-        { name: "Piel Morena Clara", hex: "#E8B89A" },
-        { name: "Piel Morena", hex: "#C89968" },
-        { name: "Piel Morena Oscura", hex: "#8D5524" },
-        { name: "Piel Oscura", hex: "#5C4033" },
-      ];
+    const skinTone = pick(SKIN_TONE_OPTIONS);
+    const hairType = pick(HAIR_TYPE_OPTIONS);
+    const faceShape = pick(FACE_SHAPE_OPTIONS);
+    const confidence = Math.floor(Math.random() * 15) + 85;
 
-      const hairTypes = ["Lacio", "Ondulado", "Rizado", "Crespo", "Afro"];
+    const result: AnalysisResult = {
+      skinTone: skinToneLabel(skinTone.value),
+      hairType: hairTypeLabel(hairType),
+      faceShape: faceShapeLabel(faceShape),
+      skinToneHex: skinTone.hex,
+      confidence,
+    };
 
-      const faceShapes = ["Ovalado", "Redondo", "Cuadrado", "Corazón", "Diamante"];
+    const recs = buildRecommendations(result);
 
-      const randomSkinTone = skinTones[Math.floor(Math.random() * skinTones.length)];
-      const randomHairType = hairTypes[Math.floor(Math.random() * hairTypes.length)];
-      const randomFaceShape = faceShapes[Math.floor(Math.random() * faceShapes.length)];
+    setAnalysisResult(result);
+    setRecommendations(recs);
+    setAnalyzing(false);
+    toast.success("Análisis completado exitosamente");
 
-      const result: AnalysisResult = {
-        skinTone: randomSkinTone.name,
-        hairType: randomHairType,
-        faceShape: randomFaceShape,
-        skinToneHex: randomSkinTone.hex,
-        confidence: Math.floor(Math.random() * 15) + 85,
-      };
-
-      setAnalysisResult(result);
-      generateRecommendations(result);
-      setAnalyzing(false);
-      toast.success("Análisis completado exitosamente");
-    }, 2500);
+    // Persistir el análisis en el backend (best-effort: la UI ya se actualizó).
+    const clientId = user?.id;
+    if (!clientId) {
+      toast.error("No se pudo guardar el análisis: sesión sin cliente asociado");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const saved = await facialAnalysisService.createAnalysis(clientId, {
+        imageUrl: image,
+        skinTone: skinTone.value,
+        skinToneHex: skinTone.hex,
+        hairType,
+        faceShape,
+        confidencePct: confidence,
+        recommendations: recs.map(({ category, title, description }) => ({
+          category,
+          title,
+          description,
+        })),
+      });
+      setHistory((prev) => [saved, ...prev]);
+    } catch {
+      toast.error("El análisis se mostró pero no se pudo guardar en el servidor");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const generateRecommendations = (result: AnalysisResult) => {
+  return {
+    image,
+    analyzing,
+    analysisResult,
+    recommendations,
+    fileInputRef,
+    videoRef,
+    cameraActive,
+    history,
+    isSaving,
+    isLoadingHistory,
+    handleFileUpload,
+    activateCamera,
+    capturePhoto,
+    analyzeImage,
+  };
+};
+
+function buildRecommendations(result: AnalysisResult): Recommendation[] {
     const recs: Recommendation[] = [];
 
     if (result.skinTone.includes("Clara")) {
@@ -207,20 +309,5 @@ export const useFacialAnalysisPresenter = () => {
       icon: Sparkles,
     });
 
-    setRecommendations(recs);
-  };
-
-  return {
-    image,
-    analyzing,
-    analysisResult,
-    recommendations,
-    fileInputRef,
-    videoRef,
-    cameraActive,
-    handleFileUpload,
-    activateCamera,
-    capturePhoto,
-    analyzeImage,
-  };
+    return recs;
 }

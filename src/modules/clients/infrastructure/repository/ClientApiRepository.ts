@@ -9,4 +9,13 @@ export class ClientApiRepository implements ClientRepository {
     });
     return data;
   }
+
+  async getClientById(id: string): Promise<Client | null> {
+    try {
+      const { data } = await axiosClient.get<Client>(`/clients/${id}`);
+      return data;
+    } catch {
+      return null;
+    }
+  }
 }

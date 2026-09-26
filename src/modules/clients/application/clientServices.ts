@@ -5,4 +5,5 @@ const repository: ClientRepository = new ClientApiRepository();
 
 export const clientService = {
   searchClients: (query: string) => repository.searchClients(query),
+  getClientById: (id: string) => repository.getClientById(id),
 };
