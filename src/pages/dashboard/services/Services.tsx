@@ -1,8 +1,11 @@
-import { Plus, Clock, DollarSign, X, Tag, FileText, Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { Plus, Clock, DollarSign, X, Tag, FileText, Trash2, Users } from "lucide-react";
 import { Button } from "@components/button";
 import { Card, CardContent } from "@components/card";
 import { Badge } from "@components/badge";
+import { Checkbox } from "@components/checkbox";
 import { useServicesPresenter, SERVICE_CATEGORIES } from "./useServicesPresenter";
+import { useServiceStaffPresenter } from "./useServiceStaffPresenter";
 import type { ServiceCategory } from "@modules/services/domain/models/Service";
 
 const categories = ["Todos", ...SERVICE_CATEGORIES];
@@ -37,6 +40,22 @@ const Services = () => {
     filteredServices,
     setActiveCategory,
   } = useServicesPresenter();
+
+  const {
+    stylists,
+    assignedIds,
+    isLoading: loadingStylists,
+    savingId,
+    loadForService,
+    toggleStylist,
+  } = useServiceStaffPresenter();
+
+  // Al abrir el detalle de un servicio, cargar qué estilistas pueden realizarlo.
+  useEffect(() => {
+    if (detailService) {
+      loadForService(detailService.id);
+    }
+  }, [detailService, loadForService]);
 
   return (
     <div className="space-y-6">
@@ -290,6 +309,42 @@ const Services = () => {
                 <p className="text-sm text-[#4A5568] leading-relaxed">
                   {detailService.description}
                 </p>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-[#718096]" />
+                  <p className="text-sm font-medium text-[#2D3748]">Estilistas que lo realizan</p>
+                </div>
+                {loadingStylists ? (
+                  <p className="text-xs text-[#718096]">Cargando estilistas...</p>
+                ) : stylists.length === 0 ? (
+                  <p className="text-xs text-[#718096]">No hay estilistas registrados.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {stylists.map((s) => {
+                      const staffId = s.staffId;
+                      return (
+                        <label
+                          key={s.id}
+                          className="flex items-center gap-3 cursor-pointer rounded-lg px-3 py-2 hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            checked={staffId ? assignedIds.has(staffId) : false}
+                            disabled={!staffId || savingId === staffId}
+                            onCheckedChange={() => {
+                              if (staffId) toggleStylist(detailService.id, staffId);
+                            }}
+                          />
+                          <span className="text-sm text-[#2D3748]">{s.name}</span>
+                          {s.specialty && (
+                            <span className="text-xs text-[#718096]">· {s.specialty}</span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-2">
