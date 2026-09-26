@@ -9,4 +9,6 @@ export interface AuthRepository {
     password: string,
     phone?: string
   ): Promise<User>;
+  /** Revoca el token en el servidor para que deje de ser válido. */
+  logout(): Promise<void>;
 }

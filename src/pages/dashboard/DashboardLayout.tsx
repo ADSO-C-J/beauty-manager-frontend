@@ -94,8 +94,9 @@ export default function DashboardLayout() {
     };
   }, [user, location.pathname]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    // Espera a que el servidor revoque el token antes de salir.
+    await logout();
     navigate(ROUTES.LANDING);
   };
 

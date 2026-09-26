@@ -25,4 +25,10 @@ export class AuthApiRepository implements AuthRepository {
     const response = await axiosClient.post<RegisterApiResponse>('/auth/register', dto);
     return registerMapper(response.data);
   }
+
+  async logout(): Promise<void> {
+    // El token va en el header Authorization (lo añade el interceptor del axiosClient).
+    // Si falla (token ya expirado, sin red), el store limpia igualmente la sesión local.
+    await axiosClient.post('/auth/logout');
+  }
 }

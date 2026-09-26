@@ -131,8 +131,9 @@ export default function Sidebar() {
         {/* Logout */}
         <div className="px-2 py-4 border-t border-gray-200">
           <button
-            onClick={() => {
-              logout();
+            onClick={async () => {
+              // Espera a que el servidor revoque el token antes de redirigir.
+              await logout();
               window.location.href = ROUTES.LOGIN;
             }}
             className={cn(

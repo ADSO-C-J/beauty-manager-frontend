@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { ROUTES } from "@app/router/routes";
 import { loginUseCase } from "@modules/auth/application/loginUseCase";
+import { logoutUseCase } from "@modules/auth/application/logoutUseCase";
 import { registerUseCase } from "@modules/auth/application/registerUseCase";
 
 export type UserRole = "administrador" | "estilista" | "recepcionista" | "cliente";
@@ -28,7 +29,7 @@ interface AuthState {
     password: string,
     phone?: string
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => void | Promise<void>;
   setLoading: (loading: boolean) => void;
   clearError: () => void;
 }
@@ -149,7 +150,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  logout: () => {
+  logout: async () => {
+    // 1. Revocar el token en el servidor para que deje de ser válido.
+    try {
+      await logoutUseCase.execute();
+    } catch {
+      // Si falla (sin red, token ya expirado...), seguimos con la limpieza local.
+    }
+    // 2. Limpiar la sesión en el cliente pase lo que pase.
     clearSession();
     set({ user: null, token: null, isAuthenticated: false, error: null });
   },
