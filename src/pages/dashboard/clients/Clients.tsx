@@ -1,4 +1,4 @@
-import { Search, Plus, Phone, Mail, Calendar } from "lucide-react";
+import { Search, Plus, Phone, Mail, Trash2, X } from "lucide-react";
 import { Button } from "@components/button";
 import { Input } from "@components/input";
 import { Card, CardContent } from "@components/card";
@@ -17,11 +17,14 @@ import { Label } from "@components/label";
 import { useNavigate } from "react-router-dom";
 import { useClientPresenter } from "./useClientPresenter";
 
-const frequencyColors = {
-  Alta: "bg-[#48BB78] text-white",
-  Media: "bg-[#ECC94B] text-[#2D3748]",
-  Baja: "bg-[#A0AEC0] text-white",
-};
+function initialsOf(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 const Clients = () => {
   const navigate = useNavigate();
@@ -29,11 +32,16 @@ const Clients = () => {
     newClient,
     searchTerm,
     isDialogOpen,
+    isLoading,
+    isSaving,
+    error,
+    clearError,
     setNewClient,
     setSearchTerm,
     filteredClients,
     setIsDialogOpen,
     handleCreateClient,
+    handleDeleteClient,
   } = useClientPresenter();
 
   return (
@@ -97,14 +105,26 @@ const Clients = () => {
               <Button
                 className="bg-[#4A5568] hover:bg-[#2D3748]"
                 onClick={handleCreateClient}
-                disabled={!newClient.name || !newClient.email || !newClient.phone}
+                disabled={
+                  isSaving || !newClient.name || !newClient.email || !newClient.phone
+                }
               >
-                Guardar cliente
+                {isSaving ? "Guardando..." : "Guardar cliente"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
+
+      {error && (
+        <div
+          className="flex items-center justify-between rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 cursor-pointer"
+          onClick={clearError}
+        >
+          {error}
+          <X className="w-4 h-4" />
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-3 w-4 h-4 text-[#A0AEC0]" />
@@ -116,71 +136,74 @@ const Clients = () => {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredClients.map((client) => (
-          <Card key={client.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="w-12 h-12">
-                  <AvatarFallback className="bg-[#4A5568] text-white">
-                    {client.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-[#2D3748] truncate">{client.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge
-                      className={frequencyColors[client.frequency as keyof typeof frequencyColors]}
-                    >
-                      {client.frequency}
-                    </Badge>
-                    <span className="text-sm text-[#718096]">{client.visits} visitas</span>
+      {isLoading ? (
+        <p className="text-sm text-[#718096]">Cargando clientes...</p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredClients.map((client) => (
+            <Card key={client.id} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <Avatar className="w-12 h-12">
+                    <AvatarFallback className="bg-[#4A5568] text-white">
+                      {client.initials || initialsOf(client.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-[#2D3748] truncate">{client.name}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className="bg-[#4A5568] text-white">Cliente</Badge>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-[#4A5568]">
-                  <Mail className="w-4 h-4" />
-                  <span className="truncate">{client.email}</span>
+                <div className="mt-4 space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-[#4A5568]">
+                    <Mail className="w-4 h-4" />
+                    <span className="truncate">{client.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[#4A5568]">
+                    <Phone className="w-4 h-4" />
+                    <span>{client.phone}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-[#4A5568]">
-                  <Phone className="w-4 h-4" />
-                  <span>{client.phone}</span>
-                </div>
-                <div className="flex items-center gap-2 text-[#4A5568]">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    Última visita: {new Date(client.lastVisit).toLocaleDateString("es-ES")}
-                  </span>
-                </div>
-              </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => navigate(`/dashboard/clients/${client.id}`)}
-                >
-                  Ver historial
-                </Button>
-                <Button
-                  className="w-full bg-[#4A5568] hover:bg-[#2D3748]"
-                  onClick={() =>
-                    navigate("/dashboard/appointments", {
-                      state: { clientName: client.name, clientId: client.id },
-                    })
-                  }
-                >
-                  Agendar cita
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate(`/dashboard/clients/${client.id}`)}
+                  >
+                    Ver historial
+                  </Button>
+                  <Button
+                    className="w-full bg-[#4A5568] hover:bg-[#2D3748]"
+                    onClick={() =>
+                      navigate("/dashboard/appointments", {
+                        state: { clientName: client.name, clientId: client.id },
+                      })
+                    }
+                  >
+                    Agendar cita
+                  </Button>
+                </div>
+                <div className="mt-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleDeleteClient(client.id)}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Eliminar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {filteredClients.length === 0 && (
+      {!isLoading && filteredClients.length === 0 && (
         <div className="text-center py-12">
           <p className="text-[#718096]">No se encontraron clientes</p>
         </div>

@@ -1,7 +1,11 @@
 import { axiosClient } from '@shared/http/axiosClient';
 import type { Appointment } from '../../domain/models/Appointment';
 import type { Stylist } from '../../domain/models/Stylist';
-import type { AppointmentRepository, CreateAppointmentData } from '../../domain/ports/AppointmentRepository';
+import type {
+  AppointmentRepository,
+  CreateAppointmentData,
+  UpdateAppointmentData,
+} from '../../domain/ports/AppointmentRepository';
 
 // Estructura que devuelve el backend
 interface ApiAppointment {
@@ -74,5 +78,21 @@ export class AppointmentApiRepository implements AppointmentRepository {
       notes: data.notes,
     });
     return toAppointment(response as ApiAppointment);
+  }
+
+  async updateAppointment(id: string, data: UpdateAppointmentData): Promise<Appointment> {
+    const { data: response } = await axiosClient.put(`/appointments/${id}`, {
+      staffId: data.stylistId,
+      service: data.service,
+      date: data.date,
+      time: data.time,
+      status: data.status,
+      notes: data.notes,
+    });
+    return toAppointment(response as ApiAppointment);
+  }
+
+  async deleteAppointment(id: string): Promise<void> {
+    await axiosClient.delete(`/appointments/${id}`);
   }
 }

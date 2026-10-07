@@ -32,9 +32,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/tabs";
 import { Calendar } from "@components/calendar";
 import { useAppointmentsPresenter } from "./useAppointmentsPresenter";
 
-
-const stylists = ["Laura García", "María López", "Pedro Sánchez", "Ana Rodríguez"];
-
 const statusColors = {
   confirmada: "bg-[#48BB78] text-white",
   pendiente: "bg-[#ECC94B] text-[#2D3748]",
@@ -51,6 +48,12 @@ const Appointments = () => {
     setOpen,
     setForm,
     services,
+    stylists,
+    clients,
+    isLoading,
+    isSaving,
+    error,
+    clearError,
     detailApt,
     searchTerm,
     handleClose,
@@ -62,7 +65,7 @@ const Appointments = () => {
     setFilterStatus,
     todayAppointments,
     filteredAppointments,
-  } = useAppointmentsPresenter();  
+  } = useAppointmentsPresenter();
 
   return (
     <div className="space-y-6">
@@ -91,17 +94,25 @@ const Appointments = () => {
             </DialogHeader>
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
-                <Label htmlFor="client-search">Cliente</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 w-4 h-4 text-[#A0AEC0]" />
-                  <Input
-                    id="client-search"
-                    placeholder="Buscar cliente..."
-                    className="pl-9"
-                    value={form.client}
-                    onChange={(e) => setForm({ ...form, client: e.target.value })}
-                  />
-                </div>
+                <Label htmlFor="client">Cliente</Label>
+                <Select
+                  value={form.clientId}
+                  onValueChange={(v) => {
+                    const c = clients.find((c) => c.id === v);
+                    setForm({ ...form, clientId: v, client: c?.name ?? "" });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}{client.email ? ` — ${client.email}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.client && <p className="text-red-500 text-xs mt-1">{errors.client}</p>}
               </div>
 
@@ -117,8 +128,8 @@ const Appointments = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {services.map((service) => (
-                        <SelectItem key={service.name} value={service.name}>
-                          {service.name} — {service.duration} — {service.price}
+                        <SelectItem key={service.id} value={service.name}>
+                          {service.name} — {service.durationMin}min — ${service.price}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -137,8 +148,8 @@ const Appointments = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {stylists.map((stylist) => (
-                        <SelectItem key={stylist} value={stylist}>
-                          {stylist}
+                        <SelectItem key={stylist.id} value={stylist.name}>
+                          {stylist.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -191,8 +202,8 @@ const Appointments = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Button type="submit" className="flex-1 bg-[#4A5568] hover:bg-[#2D3748]">
-                  Confirmar cita
+                <Button type="submit" className="flex-1 bg-[#4A5568] hover:bg-[#2D3748]" disabled={isSaving}>
+                  {isSaving ? "Guardando..." : "Confirmar cita"}
                 </Button>
                 <Button type="button" variant="outline" className="flex-1" onClick={handleClose}>
                   Cancelar
@@ -202,6 +213,16 @@ const Appointments = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {error && (
+        <div
+          className="flex items-center justify-between rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 cursor-pointer"
+          onClick={clearError}
+        >
+          {error}
+          <X className="w-4 h-4" />
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -234,6 +255,11 @@ const Appointments = () => {
         </TabsList>
 
         <TabsContent value="today" className="space-y-4">
+          {isLoading ? (
+            <p className="text-sm text-[#718096]">Cargando citas...</p>
+          ) : todayAppointments.length === 0 ? (
+            <p className="text-center py-12 text-[#718096]">No hay citas para hoy</p>
+          ) : (
           <div className="grid gap-4">
             {todayAppointments.map((appointment) => (
               <Card key={appointment.id}>
@@ -269,9 +295,15 @@ const Appointments = () => {
               </Card>
             ))}
           </div>
+          )}
         </TabsContent>
 
         <TabsContent value="all" className="space-y-4">
+          {isLoading ? (
+            <p className="text-sm text-[#718096]">Cargando citas...</p>
+          ) : filteredAppointments.length === 0 ? (
+            <p className="text-center py-12 text-[#718096]">No se encontraron citas</p>
+          ) : (
           <div className="grid gap-4">
             {filteredAppointments.map((appointment) => (
               <Card key={appointment.id}>
@@ -311,6 +343,7 @@ const Appointments = () => {
               </Card>
             ))}
           </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -333,7 +366,6 @@ const Appointments = () => {
                 <Badge className={statusColors[detailApt.status as keyof typeof statusColors]}>
                   {detailApt.status}
                 </Badge>
-                <span className="text-sm text-[#718096]">#{detailApt.id}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

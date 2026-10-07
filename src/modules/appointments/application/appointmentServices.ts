@@ -1,5 +1,9 @@
 import { AppointmentApiRepository } from '../infrastructure/repository/AppointmentApiRepository';
-import type { AppointmentRepository, CreateAppointmentData } from '../domain/ports/AppointmentRepository';
+import type {
+  AppointmentRepository,
+  CreateAppointmentData,
+  UpdateAppointmentData,
+} from '../domain/ports/AppointmentRepository';
 import { staffService } from '@modules/staff/application/staffServices';
 
 const repository: AppointmentRepository = new AppointmentApiRepository();
@@ -11,4 +15,7 @@ export const appointmentService = {
   getStylists: () => staffService.getStylists(),
   createAppointment: (data: CreateAppointmentData) =>
     repository.createAppointment(data),
+  updateAppointment: (id: string, data: UpdateAppointmentData) =>
+    repository.updateAppointment(id, data),
+  deleteAppointment: (id: string) => repository.deleteAppointment(id),
 };

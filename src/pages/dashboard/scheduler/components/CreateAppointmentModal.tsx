@@ -7,7 +7,9 @@ import { Label } from "@components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/select";
 import { Avatar, AvatarFallback } from "@components/avatar";
 import { clientService } from "@modules/clients/application/clientServices";
+import { serviceService } from "@modules/services/application/serviceServices";
 import type { Client } from "@modules/clients/domain/models/Client";
+import type { Service } from "@modules/services/domain/models/Service";
 import type { CreateAppointmentData } from "@modules/appointments/domain/ports/AppointmentRepository";
 
 type CreateAppointmentModalProps = {
@@ -22,22 +24,23 @@ type CreateAppointmentModalProps = {
   onSave: (data: CreateAppointmentData) => Promise<void> | void;
 };
 
-const services = [
-  { name: "Corte de cabello", duration: "45min" },
-  { name: "Tinte + Corte", duration: "2h" },
-  { name: "Manicure", duration: "1h" },
-  { name: "Corte + Barba", duration: "1h" },
-  { name: "Peinado especial", duration: "1.5h" },
-];
-
 export default function CreateAppointmentModal({ open, selectedSlot, onClose, onSave }: CreateAppointmentModalProps) {
   const [client, setClient] = useState("");
   const [service, setService] = useState("");
+  const [services, setServices] = useState<Service[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clientResults, setClientResults] = useState<Client[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [saving, setSaving] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Catálogo real de servicios del negocio.
+  useEffect(() => {
+    serviceService
+      .getServices()
+      .then(setServices)
+      .catch((err) => console.error("Error cargando servicios:", err));
+  }, []);
 
   // Resetear el formulario cuando se abre el modal (ajuste de estado durante el render)
   const [prevOpen, setPrevOpen] = useState(open);
@@ -177,8 +180,8 @@ export default function CreateAppointmentModal({ open, selectedSlot, onClose, on
               </SelectTrigger>
               <SelectContent>
                 {services.map((s) => (
-                  <SelectItem key={s.name} value={s.name}>
-                    {s.name} — {s.duration}
+                  <SelectItem key={s.id} value={s.name}>
+                    {s.name} — {s.durationMin}min
                   </SelectItem>
                 ))}
               </SelectContent>

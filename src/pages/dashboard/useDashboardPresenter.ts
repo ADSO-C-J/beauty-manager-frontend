@@ -1,39 +1,150 @@
+import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
+import { reportService } from "@modules/reports/application/reportServices";
+import { appointmentService } from "@modules/appointments/application/appointmentServices";
+import type { ReportMetrics } from "@modules/reports/domain/models/Report";
+import type { Appointment } from "@modules/appointments/domain/models/Appointment";
 import { Calendar, Users, DollarSign, TrendingDown, Scan, Clock } from "lucide-react";
+
+export interface DashboardMetric {
+  title: string;
+  value: string;
+  icon: typeof Calendar;
+  color: string;
+  bgColor: string;
+}
+
+export interface RecentAppointment {
+  id: string;
+  time: string;
+  client: string;
+  service: string;
+  stylist: string;
+  status: string;
+}
+
+/** Rango del día de hoy en formato ISO local que espera el backend. */
+function todayRange(): { dateFrom: string; dateTo: string } {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const now = new Date();
+  const day = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  return { dateFrom: `${day}T00:00:00`, dateTo: `${day}T23:59:59` };
+}
+
+/** Formatea "09:00" a "09:00 AM". */
+function formatTime(time: string): string {
+  const [hStr, mStr] = time.split(":");
+  const hour = Number(hStr);
+  if (Number.isNaN(hour)) return time;
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h12}:${mStr ?? "00"} ${suffix}`;
+}
+
+const currency = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
 
 export const useDashboardPresenter = () => {
   const user = useAuthStore((state) => state.user);
+  const [metrics, setMetrics] = useState<ReportMetrics | null>(null);
+  const [recentAppointments, setRecentAppointments] = useState<RecentAppointment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const getMetricsByRole = () => {
+  const loadData = useCallback(async (isCancelled?: () => boolean) => {
+    setIsLoading(true);
+    setError(null);
+    const { dateFrom, dateTo } = todayRange();
+    const [metricsRes, appointmentsRes] = await Promise.allSettled([
+      reportService.getMetrics("month"),
+      appointmentService.getAppointments(dateFrom, dateTo),
+    ]);
+    if (isCancelled?.()) return;
+    if (metricsRes.status === "fulfilled") {
+      setMetrics(metricsRes.value);
+    } else {
+      setError("No se pudieron cargar las métricas");
+    }
+    if (appointmentsRes.status === "fulfilled") {
+      setRecentAppointments(appointmentsRes.value.slice(0, 5).map(toRecentAppointment));
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const isCancelled = () => cancelled;
+    // Diferido para evitar setState sincrónico dentro del effect (patrón del proyecto).
+    Promise.resolve()
+      .then(() => loadData(isCancelled))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadData]);
+
+  const getMetricsByRole = (): DashboardMetric[] => {
     switch (user?.role) {
       case "administrador":
-        return metrics;
+        return [
+          {
+            title: "Citas hoy",
+            value: String(recentAppointments.length),
+            icon: Calendar,
+            color: "text-blue-600",
+            bgColor: "bg-blue-50",
+          },
+          {
+            title: "Clientes nuevos",
+            value: String(metrics?.newClients ?? 0),
+            icon: Users,
+            color: "text-green-600",
+            bgColor: "bg-green-50",
+          },
+          {
+            title: "Ingresos del mes",
+            value: currency.format(metrics?.totalRevenue ?? 0),
+            icon: DollarSign,
+            color: "text-purple-600",
+            bgColor: "bg-purple-50",
+          },
+          {
+            title: "Tasa de cancelación",
+            value: `${(metrics?.cancellationRate ?? 0).toFixed(1)}%`,
+            icon: TrendingDown,
+            color: "text-red-600",
+            bgColor: "bg-red-50",
+          },
+        ];
       case "estilista":
         return [
           {
             title: "Mis citas hoy",
-            value: "8",
+            value: String(recentAppointments.length),
             icon: Calendar,
             color: "text-blue-600",
             bgColor: "bg-blue-50",
           },
           {
             title: "Clientes atendidos",
-            value: "124",
+            value: String(metrics?.newClients ?? 0),
             icon: Users,
             color: "text-green-600",
             bgColor: "bg-green-50",
           },
           {
             title: "Próxima cita",
-            value: "10:30 AM",
+            value: recentAppointments[0]?.time ?? "—",
             icon: Clock,
             color: "text-purple-600",
             bgColor: "bg-purple-50",
           },
           {
             title: "Análisis realizados",
-            value: "15",
+            value: "—",
             icon: Scan,
             color: "text-orange-600",
             bgColor: "bg-orange-50",
@@ -43,21 +154,21 @@ export const useDashboardPresenter = () => {
         return [
           {
             title: "Citas hoy",
-            value: "12",
+            value: String(recentAppointments.length),
             icon: Calendar,
             color: "text-blue-600",
             bgColor: "bg-blue-50",
           },
           {
             title: "Citas pendientes",
-            value: "3",
+            value: String(recentAppointments.filter((a) => a.status === "pendiente").length),
             icon: Clock,
             color: "text-orange-600",
             bgColor: "bg-orange-50",
           },
           {
             title: "Nuevos registros",
-            value: "5",
+            value: String(metrics?.newClients ?? 0),
             icon: Users,
             color: "text-green-600",
             bgColor: "bg-green-50",
@@ -67,21 +178,21 @@ export const useDashboardPresenter = () => {
         return [
           {
             title: "Próxima cita",
-            value: "Hoy",
+            value: recentAppointments[0]?.time ?? "—",
             icon: Calendar,
             color: "text-blue-600",
             bgColor: "bg-blue-50",
           },
           {
             title: "Análisis realizados",
-            value: "2",
+            value: "—",
             icon: Scan,
             color: "text-purple-600",
             bgColor: "bg-purple-50",
           },
           {
             title: "Visitas totales",
-            value: "8",
+            value: String(recentAppointments.length),
             icon: TrendingDown,
             color: "text-green-600",
             bgColor: "bg-green-50",
@@ -92,85 +203,19 @@ export const useDashboardPresenter = () => {
     }
   };
 
-  const currentMetrics = getMetricsByRole();
+  return { currentMetrics: getMetricsByRole(), recentAppointments, isLoading, error };
+};
 
-  return { currentMetrics };
+function toRecentAppointment(apt: Appointment): RecentAppointment {
+  return {
+    id: apt.id,
+    time: formatTime(apt.time),
+    client: apt.clientName || "Cliente",
+    service: apt.service || "Servicio",
+    stylist: apt.stylistName || "Sin asignar",
+    status: apt.status,
+  };
 }
-
-
-const metrics = [
-  {
-    title: "Citas hoy",
-    value: "12",
-    icon: Calendar,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  {
-    title: "Clientes nuevos",
-    value: "8",
-    icon: Users,
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-  },
-  {
-    title: "Ingresos del mes",
-    value: "$4,280",
-    icon: DollarSign,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-  },
-  {
-    title: "Tasa de cancelación",
-    value: "4.2%",
-    icon: TrendingDown,
-    color: "text-red-600",
-    bgColor: "bg-red-50",
-  },
-];
-
-export const recentAppointments = [
-  {
-    id: 1,
-    time: "09:00 AM",
-    client: "Ana Martínez",
-    service: "Corte de cabello",
-    stylist: "Laura García",
-    status: "confirmada",
-  },
-  {
-    id: 2,
-    time: "10:30 AM",
-    client: "Carlos Ruiz",
-    service: "Tinte + Corte",
-    stylist: "María López",
-    status: "pendiente",
-  },
-  {
-    id: 3,
-    time: "11:00 AM",
-    client: "Sofía Hernández",
-    service: "Manicure",
-    stylist: "Laura García",
-    status: "confirmada",
-  },
-  {
-    id: 4,
-    time: "02:00 PM",
-    client: "Juan Pérez",
-    service: "Corte + Barba",
-    stylist: "Pedro Sánchez",
-    status: "cancelada",
-  },
-  {
-    id: 5,
-    time: "03:30 PM",
-    client: "Elena Torres",
-    service: "Peinado especial",
-    stylist: "María López",
-    status: "confirmada",
-  },
-];
 
 export const statusColors = {
   confirmada: "bg-[#48BB78] text-white",

@@ -12,13 +12,13 @@ import {
   TableRow,
 } from "@components/table";
 import { ROUTES } from "@app/router/routes";
-import { recentAppointments, statusColors, useDashboardPresenter } from "./useDashboardPresenter";
+import { statusColors, useDashboardPresenter } from "./useDashboardPresenter";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
 
 
 const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
-  const { currentMetrics } = useDashboardPresenter();
+  const { currentMetrics, recentAppointments, isLoading } = useDashboardPresenter();
 
   return (
     <div className="space-y-6">
@@ -77,6 +77,12 @@ const Dashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-[#718096]">Cargando citas...</p>
+          ) : recentAppointments.length === 0 ? (
+            <p className="text-sm text-[#718096]">No hay citas para hoy.</p>
+          ) : (
+          <>
           <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
@@ -127,6 +133,8 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
+          </>
+          )}
         </CardContent>
       </Card>
 
