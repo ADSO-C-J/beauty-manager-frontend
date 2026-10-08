@@ -1,9 +1,14 @@
-import { Camera, Upload, Sparkles, User, Scissors } from "lucide-react";
+import { Camera, Upload, Sparkles, User, Scissors, Trash2, History } from "lucide-react";
 import { Button } from "@components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/card";
 import { Badge } from "@components/badge";
 import { Progress } from "@components/progress";
 import { useFacialAnalysisPresenter } from "./useFacialAnalysisPresenter";
+import {
+  skinToneLabel,
+  hairTypeLabel,
+  faceShapeLabel,
+} from "@modules/facial-analysis/infrastructure/mappers/facialAnalysisMapper";
 
 const FacialAnalysis = () => {
   const {
@@ -18,6 +23,9 @@ const FacialAnalysis = () => {
     analysisResult,
     recommendations,
     handleFileUpload,
+    history,
+    isLoadingHistory,
+    removeAnalysis,
   } = useFacialAnalysisPresenter();
   return (
     <div className="space-y-6">
@@ -190,6 +198,59 @@ const FacialAnalysis = () => {
           </div>
         </div>
       )}
+
+      {/* Historial de análisis persistidos en el backend */}
+      <div>
+        <h3 className="text-xl font-semibold text-[#2D3748] mb-4 flex items-center gap-2">
+          <History className="w-5 h-5" />
+          Historial de análisis
+        </h3>
+        {isLoadingHistory ? (
+          <p className="text-sm text-[#718096]">Cargando historial...</p>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-[#718096]">
+            Aún no has realizado ningún análisis.
+          </p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {history.map((analysis) => (
+              <Card key={analysis.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base">
+                      {skinToneLabel(analysis.skinTone)}
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Eliminar análisis"
+                      onClick={() => void removeAnalysis(analysis.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-[#F56565]" />
+                    </Button>
+                  </div>
+                  {analysis.createdAt && (
+                    <CardDescription>
+                      {new Date(analysis.createdAt).toLocaleDateString()}
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-[#4A5568]">
+                  <p>
+                    Cabello: <span className="font-medium">{hairTypeLabel(analysis.hairType)}</span>
+                  </p>
+                  <p>
+                    Rostro: <span className="font-medium">{faceShapeLabel(analysis.faceShape)}</span>
+                  </p>
+                  {analysis.confidencePct != null && (
+                    <p>Confianza: {analysis.confidencePct}%</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

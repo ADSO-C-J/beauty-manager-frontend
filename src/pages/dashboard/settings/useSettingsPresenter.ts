@@ -9,6 +9,7 @@ import type {
 import type { UpdateBusinessData } from '@modules/business/domain/ports/BusinessRepository';
 import { toTimeInput } from '@modules/business/infrastructure/mappers/businessMapper';
 import { useAuthStore } from '@modules/auth/application/state/authStore';
+import { toast } from 'sonner';
 
 // Orden canónico de la semana; el backend espera estos valores exactos.
 export const WEEK_DAYS: { value: ScheduleDay; label: string }[] = [
@@ -52,6 +53,18 @@ const emptyBusinessForm: BusinessForm = {
   timezone: '',
 };
 
+export interface ProfileForm {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
+export interface ProfileFormErrors {
+  name?: string;
+  password?: string;
+}
+
 export type NotificationKey = keyof Pick<
   NotificationPreferences,
   | 'appointmentReminders'
@@ -63,10 +76,19 @@ export type NotificationKey = keyof Pick<
 
 export function useSettingsPresenter() {
   const user = useAuthStore((state) => state.user);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [form, setForm] = useState<BusinessForm>(emptyBusinessForm);
   const [errors, setErrors] = useState<BusinessFormErrors>({});
+
+  const [profileForm, setProfileForm] = useState<ProfileForm>({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+  });
+  const [profileErrors, setProfileErrors] = useState<ProfileFormErrors>({});
 
   const [hours, setHours] = useState<BusinessHours[]>([]);
   const [notifications, setNotifications] = useState<NotificationPreferences | null>(null);
@@ -169,6 +191,25 @@ export function useSettingsPresenter() {
     };
   }, [user?.id, loadNotifications]);
 
+  // El perfil se hidrata desde el usuario autenticado (datos reales del backend).
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    // Diferido para evitar setState sincrónico dentro del effect (patrón del proyecto).
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      setProfileForm((prev) => ({
+        ...prev,
+        name: user.name ?? '',
+        email: user.email ?? '',
+        phone: user.phone ?? '',
+      }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   // Días indexados para pintar la rejilla de horarios del negocio.
   const hoursByDay = useMemo(() => {
     const map: Partial<Record<ScheduleDay, BusinessHours>> = {};
@@ -268,12 +309,39 @@ export function useSettingsPresenter() {
     }
   };
 
-  // El perfil se gestiona localmente (no hay endpoint propio en este alcance);
-  // se muestra a partir del usuario autenticado.
-  const saveProfile = async () => {
+  // Persiste el perfil en el backend (PUT /api/users/{id}). El backend exige
+  // una contraseña válida en el mismo DTO, así que se pide cuando se edita.
+  const saveProfile = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const next: ProfileFormErrors = {};
+    if (!profileForm.name.trim()) next.name = 'El nombre es obligatorio';
+    if (!profileForm.password.trim()) {
+      next.password = 'Introduce tu contraseña para confirmar los cambios';
+    } else if (profileForm.password.length < 6) {
+      next.password = 'La contraseña debe tener mínimo 6 caracteres';
+    }
+    setProfileErrors(next);
+    if (Object.keys(next).length > 0) return false;
+
     setIsSavingProfile(true);
-    setSuccess('Los datos de perfil se obtienen del usuario autenticado');
-    setTimeout(() => setIsSavingProfile(false), 300);
+    setError(null);
+    setSuccess(null);
+    try {
+      await updateProfile({
+        name: profileForm.name.trim(),
+        phone: profileForm.phone.trim() || undefined,
+        password: profileForm.password,
+      });
+      setProfileForm((prev) => ({ ...prev, password: '' }));
+      setSuccess('Perfil actualizado correctamente');
+      toast.success('Perfil actualizado');
+      return true;
+    } catch {
+      setError('No se pudo actualizar el perfil');
+      return false;
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   return {
@@ -291,6 +359,9 @@ export function useSettingsPresenter() {
     isSavingNotifications,
     error,
     success,
+    profileForm,
+    setProfileForm,
+    profileErrors,
     clearMessages: () => {
       setError(null);
       setSuccess(null);

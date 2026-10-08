@@ -1,10 +1,10 @@
 import type { Auth } from '../../domain/models/Auth';
 import type { User } from '../../domain/models/User';
-import type { AuthRepository } from '../../domain/ports/AuthRepository';
+import type { AuthRepository, RefreshedAuth } from '../../domain/ports/AuthRepository';
 import { axiosClient } from '@shared/http/axiosClient';
 import type { LoginDTO } from '../dtos/LoginDTO';
 import type { RegisterDTO } from '../dtos/RegisterDTO';
-import { authMapper, type AuthApiResponse } from '../mappers/authMapper';
+import { authMapper, type AuthApiResponse, type AuthApiUser } from '../mappers/authMapper';
 import { registerMapper, type RegisterApiResponse } from '../mappers/registerMapper';
 
 export class AuthApiRepository implements AuthRepository {
@@ -30,5 +30,28 @@ export class AuthApiRepository implements AuthRepository {
     // El token va en el header Authorization (lo añade el interceptor del axiosClient).
     // Si falla (token ya expirado, sin red), el store limpia igualmente la sesión local.
     await axiosClient.post('/auth/logout');
+  }
+
+  async getProfile(): Promise<User> {
+    const response = await axiosClient.get<AuthApiUser>('/auth/profile');
+    return {
+      id: response.data.id,
+      name: response.data.name,
+      email: response.data.email,
+      phone: response.data.phone,
+      role: response.data.role,
+      avatar: response.data.avatarUrl,
+      businessId: response.data.businessId,
+    };
+  }
+
+  async refresh(refreshToken: string): Promise<RefreshedAuth> {
+    const response = await axiosClient.post<AuthApiResponse>('/auth/refresh', {
+      refreshToken,
+    });
+    return {
+      token: response.data.token,
+      refreshToken: response.data.refreshToken,
+    };
   }
 }

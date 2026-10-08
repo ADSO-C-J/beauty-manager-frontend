@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
 import { reportService } from "@modules/reports/application/reportServices";
 import { appointmentService } from "@modules/appointments/application/appointmentServices";
+import { facialAnalysisService, resolveClientIdByEmail } from "@modules/facial-analysis/application/facialAnalysisServices";
 import type { ReportMetrics } from "@modules/reports/domain/models/Report";
 import type { Appointment } from "@modules/appointments/domain/models/Appointment";
 import { Calendar, Users, DollarSign, TrendingDown, Scan, Clock } from "lucide-react";
@@ -51,6 +52,7 @@ export const useDashboardPresenter = () => {
   const user = useAuthStore((state) => state.user);
   const [metrics, setMetrics] = useState<ReportMetrics | null>(null);
   const [recentAppointments, setRecentAppointments] = useState<RecentAppointment[]>([]);
+  const [facialAnalysisCount, setFacialAnalysisCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,9 +60,19 @@ export const useDashboardPresenter = () => {
     setIsLoading(true);
     setError(null);
     const { dateFrom, dateTo } = todayRange();
-    const [metricsRes, appointmentsRes] = await Promise.allSettled([
+    // Solo los clientes (y estilistas que atienden análisis) tienen análisis faciales;
+    // para el resto de roles se evita una petición que devolvería 404.
+    const canHaveAnalyses =
+      user?.role === "cliente" || user?.role === "estilista";
+    const clientId = canHaveAnalyses
+      ? await resolveClientIdByEmail(user?.email)
+      : null;
+    const [metricsRes, appointmentsRes, analysesRes] = await Promise.allSettled([
       reportService.getMetrics("month"),
       appointmentService.getAppointments(dateFrom, dateTo),
+      clientId
+        ? facialAnalysisService.getAnalyses(clientId)
+        : Promise.resolve([]),
     ]);
     if (isCancelled?.()) return;
     if (metricsRes.status === "fulfilled") {
@@ -71,8 +83,11 @@ export const useDashboardPresenter = () => {
     if (appointmentsRes.status === "fulfilled") {
       setRecentAppointments(appointmentsRes.value.slice(0, 5).map(toRecentAppointment));
     }
+    if (analysesRes.status === "fulfilled") {
+      setFacialAnalysisCount(analysesRes.value.length);
+    }
     setIsLoading(false);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,7 +159,10 @@ export const useDashboardPresenter = () => {
           },
           {
             title: "Análisis realizados",
-            value: "—",
+            value:
+              facialAnalysisCount !== null
+                ? String(facialAnalysisCount)
+                : "—",
             icon: Scan,
             color: "text-orange-600",
             bgColor: "bg-orange-50",
@@ -185,7 +203,10 @@ export const useDashboardPresenter = () => {
           },
           {
             title: "Análisis realizados",
-            value: "—",
+            value:
+              facialAnalysisCount !== null
+                ? String(facialAnalysisCount)
+                : "—",
             icon: Scan,
             color: "text-purple-600",
             bgColor: "bg-purple-50",

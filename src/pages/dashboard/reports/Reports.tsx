@@ -42,6 +42,7 @@ const Reports = () => {
     revenueChartData,
     serviceChartData,
     staffPerformance,
+    exportToExcel,
   } = useReportsPresenter();
 
   const metricCards = [
@@ -90,7 +91,7 @@ const Reports = () => {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" className="w-full sm:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={exportToExcel}>
             <Download className="w-4 h-4 mr-2" />
             Exportar Excel
           </Button>

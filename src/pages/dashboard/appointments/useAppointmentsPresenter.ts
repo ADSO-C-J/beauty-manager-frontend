@@ -51,6 +51,17 @@ const emptyForm = {
   notes: "",
 };
 
+/** Extrae el mensaje que devuelve el backend (o uno genérico si no hay). */
+function apiErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null) {
+    const anyError = error as {
+      response?: { data?: { message?: string } };
+    };
+    return anyError.response?.data?.message ?? fallback;
+  }
+  return fallback;
+}
+
 export const useAppointmentsPresenter = () => {
   const location = useLocation();
   const [appointmentList, setAppointmentList] = useState<AppointmentView[]>([]);
@@ -165,8 +176,13 @@ export const useAppointmentsPresenter = () => {
       });
       setAppointmentList((prev) => [...prev, toView(created)]);
       handleClose();
-    } catch {
-      setError("No se pudo crear la cita");
+    } catch (error) {
+      // Cierra el modal para que el mensaje de error de la página no quede oculto
+      // detrás del diálogo. El error se conserva (handleClose no lo limpia).
+      handleClose();
+      setError(
+        apiErrorMessage(error, "No se pudo crear la cita (revisa cliente y estilista)")
+      );
     } finally {
       setIsSaving(false);
     }

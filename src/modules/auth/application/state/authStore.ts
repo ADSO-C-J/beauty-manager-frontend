@@ -3,6 +3,8 @@ import { ROUTES } from "@app/router/routes";
 import { loginUseCase } from "@modules/auth/application/loginUseCase";
 import { logoutUseCase } from "@modules/auth/application/logoutUseCase";
 import { registerUseCase } from "@modules/auth/application/registerUseCase";
+import { getProfileUseCase } from "@modules/auth/application/getProfileUseCase";
+import { userService } from "@modules/users/application/userServices";
 
 export type UserRole = "administrador" | "estilista" | "recepcionista" | "cliente";
 
@@ -19,6 +21,7 @@ export interface User {
 interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
@@ -30,11 +33,20 @@ interface AuthState {
     phone?: string
   ) => Promise<void>;
   logout: () => void | Promise<void>;
+  /** Limpia la sesión local sin llamar al backend (p. ej. ante un 401). */
+  forceLogout: () => void;
+  /** Aplica un token renovado (tras /auth/refresh) y lo persiste. */
+  setTokens: (token: string, refreshToken?: string) => void;
+  /** Trae los datos actuales del usuario desde el backend y actualiza el store. */
+  refreshProfile: () => Promise<User>;
+  /** Actualiza el perfil del usuario en el backend y sincroniza el store. */
+  updateProfile: (data: { name: string; phone?: string; password?: string }) => Promise<User>;
   setLoading: (loading: boolean) => void;
   clearError: () => void;
 }
 
 const TOKEN_KEY = "token";
+const REFRESH_KEY = "refresh-token";
 const STORAGE_KEY = "auth-storage";
 
 const getStoredUser = (): User | null => {
@@ -59,8 +71,18 @@ const getStoredToken = (): string | null => {
   }
 };
 
+const getStoredRefreshToken = (): string | null => {
+  try {
+    return localStorage.getItem(REFRESH_KEY);
+  } catch (error) {
+    console.error("Error loading refresh token from storage:", error);
+    return null;
+  }
+};
+
 const storedUser = getStoredUser();
 const storedToken = getStoredToken();
+const storedRefreshToken = getStoredRefreshToken();
 
 const getErrorMessage = (error: unknown): string => {
   if (typeof error === "object" && error !== null) {
@@ -73,9 +95,10 @@ const getErrorMessage = (error: unknown): string => {
   return "Ocurrió un error inesperado";
 };
 
-const persistSession = (token: string, user: User) => {
+const persistSession = (token: string, user: User, refreshToken?: string) => {
   try {
     localStorage.setItem(TOKEN_KEY, token);
+    if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { user } }));
   } catch (error) {
     console.error("Error saving session:", error);
@@ -85,6 +108,7 @@ const persistSession = (token: string, user: User) => {
 const clearSession = () => {
   try {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
     console.error("Error clearing session:", error);
@@ -94,6 +118,7 @@ const clearSession = () => {
 export const useAuthStore = create<AuthState>((set) => ({
   user: storedUser,
   token: storedToken,
+  refreshToken: storedRefreshToken,
   isLoading: false,
   isAuthenticated: storedUser !== null && storedToken !== null,
   error: null,
@@ -113,8 +138,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         businessId: auth.user?.businessId,
       };
 
-      persistSession(auth.token, user);
-      set({ user, token: auth.token, isLoading: false, isAuthenticated: true, error: null });
+      persistSession(auth.token, user, auth.refreshToken);
+      set({
+        user,
+        token: auth.token,
+        refreshToken: auth.refreshToken ?? null,
+        isLoading: false,
+        isAuthenticated: true,
+        error: null,
+      });
     } catch (error) {
       const message = getErrorMessage(error);
       set({ isLoading: false, isAuthenticated: false, error: message });
@@ -141,8 +173,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         businessId: auth.user?.businessId,
       };
 
-      persistSession(auth.token, user);
-      set({ user, token: auth.token, isLoading: false, isAuthenticated: true, error: null });
+      persistSession(auth.token, user, auth.refreshToken);
+      set({
+        user,
+        token: auth.token,
+        refreshToken: auth.refreshToken ?? null,
+        isLoading: false,
+        isAuthenticated: true,
+        error: null,
+      });
     } catch (error) {
       const message = getErrorMessage(error);
       set({ isLoading: false, isAuthenticated: false, error: message });
@@ -159,7 +198,70 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     // 2. Limpiar la sesión en el cliente pase lo que pase.
     clearSession();
-    set({ user: null, token: null, isAuthenticated: false, error: null });
+    set({ user: null, token: null, refreshToken: null, isAuthenticated: false, error: null });
+  },
+
+  forceLogout: () => {
+    // Limpieza local sin llamar al backend (usado ante un 401: el token ya no sirve).
+    clearSession();
+    set({ user: null, token: null, refreshToken: null, isAuthenticated: false, error: null });
+  },
+
+  setTokens: (token, refreshToken) => {
+    try {
+      localStorage.setItem(TOKEN_KEY, token);
+      if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
+    } catch (error) {
+      console.error("Error saving tokens:", error);
+    }
+    set((state) => ({
+      token,
+      refreshToken: refreshToken ?? state.refreshToken,
+      isAuthenticated: true,
+    }));
+  },
+
+  refreshProfile: async () => {
+    const profile = await getProfileUseCase.execute();
+    const user: User = {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      role: (profile.role as UserRole) ?? "cliente",
+      avatar: profile.avatar,
+      businessId: profile.businessId,
+    };
+    const token = getStoredToken() ?? "";
+    persistSession(token, user, getStoredRefreshToken() ?? undefined);
+    set({ user, isAuthenticated: true });
+    return user;
+  },
+
+  updateProfile: async ({ name, phone, password }) => {
+    const current = getStoredUser();
+    if (!current) throw new Error("No hay sesión activa");
+    // El backend exige el mismo UserRequestDTO para actualizar (incluye password).
+    const updated = await userService.updateUser(current.id, {
+      name,
+      email: current.email,
+      password: password ?? "",
+      phone,
+      role: current.role,
+    });
+    const user: User = {
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      phone: updated.phone,
+      role: updated.role,
+      avatar: updated.avatarUrl ?? current.avatar,
+      businessId: current.businessId,
+    };
+    const token = getStoredToken() ?? "";
+    persistSession(token, user, getStoredRefreshToken() ?? undefined);
+    set({ user });
+    return user;
   },
 
   setLoading: (loading: boolean) => {

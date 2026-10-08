@@ -61,9 +61,14 @@ const Settings = () => {
     notifications,
     isLoading,
     isSavingBusiness,
+    isSavingProfile,
     error,
     success,
+    profileForm,
+    setProfileForm,
+    profileErrors,
     clearMessages,
+    saveProfile,
     saveBusiness,
     upsertHours,
     toggleDayClosed,
@@ -108,11 +113,94 @@ const Settings = () => {
       )}
 
       <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex">
+        <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4 sm:inline-flex">
+          <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="business">Negocio</TabsTrigger>
           <TabsTrigger value="hours">Horarios</TabsTrigger>
           <TabsTrigger value="notifications">Avisos</TabsTrigger>
         </TabsList>
+
+        {/* --- Perfil del usuario autenticado --- */}
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mi perfil</CardTitle>
+              <CardDescription>
+                Actualiza tus datos personales. Se guardan en el servidor.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={saveProfile}>
+                <div>
+                  <Label htmlFor="profileName">Nombre</Label>
+                  <Input
+                    id="profileName"
+                    value={profileForm.name}
+                    onChange={(e) =>
+                      setProfileForm({ ...profileForm, name: e.target.value })
+                    }
+                  />
+                  {profileErrors.name && (
+                    <p className="text-red-500 text-xs mt-1">{profileErrors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="profileEmail">Email</Label>
+                  <Input
+                    id="profileEmail"
+                    type="email"
+                    value={profileForm.email}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="profilePhone">Teléfono</Label>
+                  <Input
+                    id="profilePhone"
+                    type="tel"
+                    value={profileForm.phone}
+                    onChange={(e) =>
+                      setProfileForm({ ...profileForm, phone: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="profilePassword">Contraseña</Label>
+                  <Input
+                    id="profilePassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={profileForm.password}
+                    onChange={(e) =>
+                      setProfileForm({ ...profileForm, password: e.target.value })
+                    }
+                  />
+                  {profileErrors.password ? (
+                    <p className="text-red-500 text-xs mt-1">{profileErrors.password}</p>
+                  ) : (
+                    <p className="text-xs text-[#718096] mt-1">
+                      Requerida para confirmar los cambios.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    type="submit"
+                    disabled={isSavingProfile}
+                    className="bg-[#4A5568] hover:bg-[#2D3748]"
+                  >
+                    {isSavingProfile ? "Guardando..." : "Guardar perfil"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* --- Negocio --- */}
         <TabsContent value="business">

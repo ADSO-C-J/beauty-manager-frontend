@@ -3,7 +3,7 @@ import { Sparkles, Palette, Scissors } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { toast } from "sonner";
-import { facialAnalysisService } from "@modules/facial-analysis/application/facialAnalysisServices";
+import { facialAnalysisService, resolveClientIdByEmail } from "@modules/facial-analysis/application/facialAnalysisServices";
 import {
   skinToneLabel,
   hairTypeLabel,
@@ -32,8 +32,9 @@ interface Recommendation {
   icon: LucideIcon;
 }
 
-// Detección local (no hay endpoint de inferencia en el backend):
-// los valores se eligen al azar entre las opciones válidas de la API y luego
+// Detección local (el backend no expone un endpoint de inferencia):
+// los valores se derivan de forma determinista a partir del contenido de la imagen
+// (hash), de modo que la misma foto produce siempre el mismo resultado y luego
 // se PERSISTEN en el backend mediante createAnalysis().
 const SKIN_TONE_OPTIONS: { value: SkinTone; hex: string }[] = [
   { value: "muy_clara", hex: "#F5D5C3" },
@@ -54,7 +55,30 @@ const FACE_SHAPE_OPTIONS: FaceShape[] = [
   "rectangular",
 ];
 
-const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+/**
+ * Hash determinista y estable de una cadena (FNV-1a).
+ * Se usa sobre el data-URL de la imagen para derivar un resultado reproducible:
+ * la misma foto siempre produce los mismos valores, en lugar de cambiar en cada clic.
+ */
+function stableHash(input: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  // Convierte a entero sin signo de 32 bits.
+  return hash >>> 0;
+}
+
+const pickBySeed = <T,>(arr: T[], seed: number, offset: number): T =>
+  arr[(seed >>> offset) % arr.length];
+
+/**
+ * Resuelve el `client.id` (entidad ClientEntity) a partir del usuario autenticado.
+ * Delega en el servicio de análisis facial (compartido con el dashboard) para
+ * mantener una única fuente de verdad de la resolución user→client.
+ */
+const resolveClientId = resolveClientIdByEmail;
 
 export const useFacialAnalysisPresenter = () => {
   const user = useAuthStore((state) => state.user);
@@ -70,10 +94,18 @@ export const useFacialAnalysisPresenter = () => {
   const [cameraActive, setCameraActive] = useState(false);
 
   const loadHistory = useCallback(async (isCancelled?: () => boolean) => {
-    const clientId = user?.id;
-    if (!clientId) return;
+    // Solo los clientes/estilistas tienen análisis faciales asociados; para otros
+    // roles (p.ej. administrador) el endpoint responde 404, así que no se llama.
+    const canHaveAnalyses =
+      user?.role === "cliente" || user?.role === "estilista";
+    if (!canHaveAnalyses) return;
     setIsLoadingHistory(true);
     try {
+      // El backend distingue entre el usuario (login) y el cliente (entidad aparte):
+      // /facial-analyses espera un client.id, no el user.id. Se resuelve buscando
+      // el cliente cuyo email coincide con el del usuario autenticado.
+      const clientId = await resolveClientId(user?.email);
+      if (!clientId) return;
       const data = await facialAnalysisService.getAnalyses(clientId);
       if (isCancelled?.()) return;
       setHistory(data);
@@ -82,7 +114,7 @@ export const useFacialAnalysisPresenter = () => {
     } finally {
       if (!isCancelled?.()) setIsLoadingHistory(false);
     }
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,10 +177,12 @@ export const useFacialAnalysisPresenter = () => {
 
     setAnalyzing(true);
 
-    const skinTone = pick(SKIN_TONE_OPTIONS);
-    const hairType = pick(HAIR_TYPE_OPTIONS);
-    const faceShape = pick(FACE_SHAPE_OPTIONS);
-    const confidence = Math.floor(Math.random() * 15) + 85;
+    // Derivación determinista a partir del contenido de la imagen.
+    const seed = stableHash(image);
+    const skinTone = pickBySeed(SKIN_TONE_OPTIONS, seed, 0);
+    const hairType = pickBySeed(HAIR_TYPE_OPTIONS, seed, 8);
+    const faceShape = pickBySeed(FACE_SHAPE_OPTIONS, seed, 16);
+    const confidence = 85 + (seed % 15);
 
     const result: AnalysisResult = {
       skinTone: skinToneLabel(skinTone.value),
@@ -166,9 +200,9 @@ export const useFacialAnalysisPresenter = () => {
     toast.success("Análisis completado exitosamente");
 
     // Persistir el análisis en el backend (best-effort: la UI ya se actualizó).
-    const clientId = user?.id;
+    const clientId = await resolveClientId(user?.email);
     if (!clientId) {
-      toast.error("No se pudo guardar el análisis: sesión sin cliente asociado");
+      toast.error("No se pudo guardar el análisis: no hay un cliente asociado a tu cuenta");
       return;
     }
     setIsSaving(true);
@@ -194,6 +228,20 @@ export const useFacialAnalysisPresenter = () => {
     }
   };
 
+  const removeAnalysis = useCallback(
+    async (id: string) => {
+      const clientId = await resolveClientId(user?.email);
+      if (!clientId) return;
+      try {
+        await facialAnalysisService.deleteAnalysis(clientId, id);
+        setHistory((prev) => prev.filter((a) => a.id !== id));
+      } catch {
+        toast.error("No se pudo eliminar el análisis");
+      }
+    },
+    [user]
+  );
+
   return {
     image,
     analyzing,
@@ -209,6 +257,7 @@ export const useFacialAnalysisPresenter = () => {
     activateCamera,
     capturePhoto,
     analyzeImage,
+    removeAnalysis,
   };
 };
 
