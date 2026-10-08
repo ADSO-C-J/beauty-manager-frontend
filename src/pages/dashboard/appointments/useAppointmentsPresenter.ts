@@ -86,6 +86,11 @@ export const useAppointmentsPresenter = () => {
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [detailApt, setDetailApt] = useState<AppointmentView | null>(null);
+  // Modo del formulario: crear (null) o editar una cita existente (id).
+  const [editingId, setEditingId] = useState<string | null>(null);
+  // Confirmación de borrado: guarda la cita pendiente de eliminar.
+  const [pendingDelete, setPendingDelete] = useState<AppointmentView | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Catálogos (servicios, estilistas, clientes) para los selectores.
   const loadCatalogs = useCallback(async (isCancelled?: () => boolean) => {
@@ -136,8 +141,35 @@ export const useAppointmentsPresenter = () => {
 
   const handleClose = () => {
     setOpen(false);
+    setEditingId(null);
     setForm(emptyForm);
     setErrors({});
+  };
+
+  /** Abre el formulario en modo creación (limpio). */
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setErrors({});
+    setDate(new Date());
+    setOpen(true);
+  };
+
+  /** Abre el formulario en modo edición con los datos de la cita seleccionada. */
+  const openEdit = (apt: AppointmentView) => {
+    setEditingId(apt.id);
+    setForm({
+      client: apt.client,
+      clientId: apt.clientId,
+      service: apt.service,
+      stylist: apt.stylist,
+      time: apt.time,
+      notes: apt.notes ?? "",
+    });
+    setDate(apt.date ? new Date(apt.date + "T00:00:00") : new Date());
+    setErrors({});
+    setDetailApt(null);
+    setOpen(true);
   };
 
   const validate = () => {
@@ -163,25 +195,50 @@ export const useAppointmentsPresenter = () => {
       return;
     }
 
+    // El POST de citas exige el staff.id (tabla staff), no el user.id. /stylists
+    // devuelve ambos: `id` (user) y `staffId` (staff). Se usa staffId y, si el
+    // backend no lo enviara, se cae a `id` como último recurso.
+    const staffId = selectedStylist.staffId ?? selectedStylist.id;
+
     setIsSaving(true);
     setError(null);
     try {
-      const created = await appointmentService.createAppointment({
+      const payload = {
         clientId: form.clientId,
         service: form.service,
-        stylistId: selectedStylist.id,
+        stylistId: staffId,
         date: date ? date.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
         time: form.time,
         notes: form.notes.trim() || undefined,
-      });
-      setAppointmentList((prev) => [...prev, toView(created)]);
+      };
+
+      if (editingId) {
+        // Actualización completa (PUT): mantiene el estado actual de la cita.
+        const current = appointmentList.find((a) => a.id === editingId);
+        const updated = await appointmentService.updateAppointment(editingId, {
+          ...payload,
+          status: current?.status ?? "pendiente",
+        });
+        setAppointmentList((prev) =>
+          prev.map((a) => (a.id === editingId ? toView(updated) : a)),
+        );
+        setDetailApt((prev) => (prev && prev.id === editingId ? toView(updated) : prev));
+      } else {
+        const created = await appointmentService.createAppointment(payload);
+        setAppointmentList((prev) => [...prev, toView(created)]);
+      }
       handleClose();
     } catch (error) {
       // Cierra el modal para que el mensaje de error de la página no quede oculto
       // detrás del diálogo. El error se conserva (handleClose no lo limpia).
       handleClose();
       setError(
-        apiErrorMessage(error, "No se pudo crear la cita (revisa cliente y estilista)")
+        apiErrorMessage(
+          error,
+          editingId
+            ? "No se pudo actualizar la cita (revisa cliente y estilista)"
+            : "No se pudo crear la cita (revisa cliente y estilista)",
+        ),
       );
     } finally {
       setIsSaving(false);
@@ -208,6 +265,34 @@ export const useAppointmentsPresenter = () => {
       setAppointmentList((prev) => prev.map((a) => (a.id === id ? { ...a, status: current.status } : a)));
       setDetailApt((prev) => (prev?.id === id ? { ...prev, status: current.status } : prev));
       setError("No se pudo actualizar el estado de la cita");
+    }
+  };
+
+  /** Abre el diálogo de confirmación de borrado para una cita. */
+  const requestDelete = (apt: AppointmentView) => {
+    setPendingDelete(apt);
+  };
+
+  const cancelDelete = () => {
+    setPendingDelete(null);
+  };
+
+  /** Elimina la cita pendiente de confirmación (DELETE /appointments/{id}). */
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const target = pendingDelete;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await appointmentService.deleteAppointment(target.id);
+      setAppointmentList((prev) => prev.filter((a) => a.id !== target.id));
+      setDetailApt((prev) => (prev && prev.id === target.id ? null : prev));
+      setPendingDelete(null);
+    } catch (err) {
+      setPendingDelete(null);
+      setError(apiErrorMessage(err, "No se pudo eliminar la cita"));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -242,6 +327,14 @@ export const useAppointmentsPresenter = () => {
     detailApt,
     searchTerm,
     handleClose,
+    openCreate,
+    openEdit,
+    editingId,
+    pendingDelete,
+    isDeleting,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
     filterStatus,
     setDetailApt,
     handleSubmit,

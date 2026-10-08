@@ -9,6 +9,8 @@ import {
   Scissors,
   UserCheck,
   CalendarDays,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@components/button";
 import { Card, CardContent } from "@components/card";
@@ -45,7 +47,6 @@ const Appointments = () => {
     form,
     errors,
     setDate,
-    setOpen,
     setForm,
     services,
     stylists,
@@ -57,6 +58,14 @@ const Appointments = () => {
     detailApt,
     searchTerm,
     handleClose,
+    openCreate,
+    openEdit,
+    editingId,
+    pendingDelete,
+    isDeleting,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
     filterStatus,
     handleSubmit,
     setDetailApt,
@@ -76,7 +85,7 @@ const Appointments = () => {
         </div>
         <Button
           className="bg-[#4A5568] hover:bg-[#2D3748] w-full sm:w-auto"
-          onClick={() => setOpen(true)}
+          onClick={openCreate}
         >
           <Plus className="w-4 h-4 mr-2" />
           Nueva cita
@@ -90,7 +99,7 @@ const Appointments = () => {
         >
           <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Agendar nueva cita</DialogTitle>
+              <DialogTitle>{editingId ? "Editar cita" : "Agendar nueva cita"}</DialogTitle>
             </DialogHeader>
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
@@ -179,11 +188,15 @@ const Appointments = () => {
                         <SelectValue placeholder="Selecciona hora" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: 20 }, (_, i) => i + 8).map((hour) => (
-                          <SelectItem key={hour} value={`${hour}:00`}>
-                            {hour}:00
-                          </SelectItem>
-                        ))}
+                        {Array.from({ length: 20 }, (_, i) => i + 8).map((hour) => {
+                          // El backend exige HH:mm con dos dígitos (ISO): "08:00", no "8:00".
+                          const value = `${String(hour).padStart(2, "0")}:00`;
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {hour}:00
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
@@ -203,7 +216,7 @@ const Appointments = () => {
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button type="submit" className="flex-1 bg-[#4A5568] hover:bg-[#2D3748]" disabled={isSaving}>
-                  {isSaving ? "Guardando..." : "Confirmar cita"}
+                  {isSaving ? "Guardando..." : editingId ? "Guardar cambios" : "Confirmar cita"}
                 </Button>
                 <Button type="button" variant="outline" className="flex-1" onClick={handleClose}>
                   Cancelar
@@ -443,14 +456,67 @@ const Appointments = () => {
                     Cancelar cita
                   </Button>
                 )}
-                <Button variant="outline" className="flex-1" onClick={() => setDetailApt(null)}>
-                  Cerrar
+              </div>
+
+              {/* Editar y eliminar (CRUD completo) */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => openEdit(detailApt)}
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-red-300 text-red-500 hover:bg-red-50"
+                  onClick={() => requestDelete(detailApt)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar
                 </Button>
               </div>
+
+              <Button variant="outline" className="w-full" onClick={() => setDetailApt(null)}>
+                Cerrar
+              </Button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Diálogo de confirmación de eliminación */}
+      <Dialog
+        open={!!pendingDelete}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) cancelDelete();
+        }}
+      >
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eliminar cita</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-[#4A5568]">
+            ¿Seguro que quieres eliminar la cita de{" "}
+            <span className="font-semibold text-[#2D3748]">{pendingDelete?.client}</span>{" "}
+            del {pendingDelete?.date} a las {pendingDelete?.time}? Esta acción no se
+            puede deshacer.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <Button
+              className="flex-1 bg-[#F56565] hover:bg-[#E53E3E] text-white"
+              disabled={isDeleting}
+              onClick={confirmDelete}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+            <Button variant="outline" className="flex-1" disabled={isDeleting} onClick={cancelDelete}>
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

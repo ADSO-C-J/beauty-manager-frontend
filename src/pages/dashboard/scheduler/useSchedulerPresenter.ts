@@ -114,10 +114,14 @@ export function useSchedulerPresenter() {
   const weekDays = useMemo(() => getWeekDays(currentMonday), [currentMonday]);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
 
-  // Citas filtradas por el estilista seleccionado
+  // Citas filtradas por el estilista seleccionado.
+  // OJO: las citas guardan el staff.id (tabla staff), no el user.id. El estilista
+  // expone ambos (`id` = user, `staffId` = staff), así que hay que comparar con
+  // staffId para que el filtro no quede vacío.
   const filteredAppointments = useMemo(() => {
     if (!selectedStylist) return [];
-    return appointments.filter((apt) => apt.stylistId === selectedStylist.id);
+    const staffId = selectedStylist.staffId ?? selectedStylist.id;
+    return appointments.filter((apt) => apt.stylistId === staffId);
   }, [appointments, selectedStylist]);
 
   // Navegar a la semana anterior
@@ -154,7 +158,7 @@ export function useSchedulerPresenter() {
     setSelectedSlot({
       date,
       time,
-      stylistId: selectedStylist.id,
+      stylistId: selectedStylist.staffId ?? selectedStylist.id,
       stylistName: selectedStylist.name,
     });
     setModalOpen(true);
