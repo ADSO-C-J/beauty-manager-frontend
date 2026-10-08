@@ -1,4 +1,4 @@
-import { Search, Plus, Phone, Mail, Trash2, X } from "lucide-react";
+import { Search, Plus, Phone, Mail, Trash2, X, Pencil } from "lucide-react";
 import { Button } from "@components/button";
 import { Input } from "@components/input";
 import { Card, CardContent } from "@components/card";
@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@components/dialog";
 import { Label } from "@components/label";
@@ -39,9 +38,16 @@ const Clients = () => {
     setNewClient,
     setSearchTerm,
     filteredClients,
-    setIsDialogOpen,
-    handleCreateClient,
-    handleDeleteClient,
+    editingId,
+    openCreate,
+    openEdit,
+    closeDialog,
+    handleSaveClient,
+    pendingDelete,
+    isDeleting,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
   } = useClientPresenter();
 
   return (
@@ -53,18 +59,26 @@ const Clients = () => {
             Gestiona la información y el historial de tus clientes
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#4A5568] hover:bg-[#2D3748] w-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo cliente
-            </Button>
-          </DialogTrigger>
+        <Button
+          className="bg-[#4A5568] hover:bg-[#2D3748] w-full sm:w-auto"
+          onClick={openCreate}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo cliente
+        </Button>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) closeDialog();
+          }}
+        >
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Agregar nuevo cliente</DialogTitle>
+              <DialogTitle>{editingId ? "Editar cliente" : "Agregar nuevo cliente"}</DialogTitle>
               <DialogDescription>
-                Completa la información del nuevo cliente. Haz clic en guardar cuando termines.
+                {editingId
+                  ? "Modifica la información del cliente y guarda los cambios."
+                  : "Completa la información del nuevo cliente. Haz clic en guardar cuando termines."}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -99,17 +113,17 @@ const Clients = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button variant="outline" onClick={closeDialog}>
                 Cancelar
               </Button>
               <Button
                 className="bg-[#4A5568] hover:bg-[#2D3748]"
-                onClick={handleCreateClient}
+                onClick={handleSaveClient}
                 disabled={
                   isSaving || !newClient.name || !newClient.email || !newClient.phone
                 }
               >
-                {isSaving ? "Guardando..." : "Guardar cliente"}
+                {isSaving ? "Guardando..." : editingId ? "Guardar cambios" : "Guardar cliente"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -187,11 +201,19 @@ const Clients = () => {
                     Agendar cita
                   </Button>
                 </div>
-                <div className="mt-2">
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full text-[#4A5568] hover:bg-[#F7FAFC]"
+                    onClick={() => openEdit(client)}
+                  >
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Editar
+                  </Button>
                   <Button
                     variant="ghost"
                     className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleDeleteClient(client.id)}
+                    onClick={() => requestDelete(client)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Eliminar
@@ -208,6 +230,37 @@ const Clients = () => {
           <p className="text-[#718096]">No se encontraron clientes</p>
         </div>
       )}
+
+      {/* Diálogo de confirmación de eliminación */}
+      <Dialog
+        open={!!pendingDelete}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) cancelDelete();
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Eliminar cliente</DialogTitle>
+            <DialogDescription>
+              ¿Seguro que quieres eliminar a{" "}
+              <span className="font-semibold text-[#2D3748]">{pendingDelete?.name}</span>? Esta
+              acción desactiva al cliente y su acceso.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" disabled={isDeleting} onClick={cancelDelete}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-[#F56565] hover:bg-[#E53E3E] text-white"
+              disabled={isDeleting}
+              onClick={confirmDelete}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
