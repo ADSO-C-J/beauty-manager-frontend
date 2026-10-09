@@ -24,6 +24,16 @@ type CreateAppointmentModalProps = {
   onSave: (data: CreateAppointmentData) => Promise<void> | void;
 };
 
+/** Traduce el error de la API a un mensaje legible para el usuario. */
+function extractErrorMessage(err: unknown): string {
+  const response = (err as { response?: { data?: { message?: string } } })?.response;
+  return (
+    response?.data?.message ??
+    (err instanceof Error ? err.message : null) ??
+    "No se pudo crear la cita. Intenta de nuevo."
+  );
+}
+
 export default function CreateAppointmentModal({ open, selectedSlot, onClose, onSave }: CreateAppointmentModalProps) {
   const [client, setClient] = useState("");
   const [service, setService] = useState("");
@@ -32,6 +42,7 @@ export default function CreateAppointmentModal({ open, selectedSlot, onClose, on
   const [clientResults, setClientResults] = useState<Client[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Catálogo real de servicios del negocio.
@@ -87,6 +98,7 @@ export default function CreateAppointmentModal({ open, selectedSlot, onClose, on
     if (!selectedSlot || !selectedClient || !service) return;
 
     setSaving(true);
+    setError(null);
     try {
       await onSave({
         clientId: selectedClient.id,
@@ -95,6 +107,8 @@ export default function CreateAppointmentModal({ open, selectedSlot, onClose, on
         date: selectedSlot.date,
         time: selectedSlot.time,
       });
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -187,6 +201,12 @@ export default function CreateAppointmentModal({ open, selectedSlot, onClose, on
               </SelectContent>
             </Select>
           </div>
+
+          {error && (
+            <p className="text-[#F56565] text-sm" role="alert">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-3 pt-2">
             <Button type="submit" className="flex-1 bg-[#4A5568] hover:bg-[#2D3748]" disabled={saving}>

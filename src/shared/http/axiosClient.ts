@@ -1,8 +1,22 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@modules/auth/application/state/authStore';
 
+const DEFAULT_API_URL = 'https://beautymanagerapi-backend.onrender.com/api';
+
+/**
+ * Normaliza la base URL de la API:
+ *  - elimina la barra final
+ *  - garantiza el prefijo `/api` (el backend solo sirve bajo /api; sin él la
+ *    petición cae en una ruta inexistente y el navegador reporta un error CORS
+ *    enmascarando el 403 real).
+ */
+const resolveBaseUrl = (raw?: string): string => {
+  const base = (raw?.trim() || DEFAULT_API_URL).replace(/\/+$/, '');
+  return /\/api$/.test(base) ? base : `${base}/api`;
+};
+
 export const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'https://beautymanagerapi-backend.onrender.com/api',
+  baseURL: resolveBaseUrl(import.meta.env.VITE_API_URL),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -66,7 +80,21 @@ axiosClient.interceptors.response.use(
     const hadSession =
       useAuthStore.getState().isAuthenticated || !!localStorage.getItem('token');
 
-    if (status === 401 && !isPublicPath(requestUrl) && config && !config._retried && hadSession) {
+    // Un 401 "falso": el backend re-despacha las excepciones del controlador a
+    // /error y ese re-despacho pierde el contexto de autenticaci\u00f3n, devolviendo un
+    // 401 que NO significa que el token sea inv\u00e1lido. Cerrar sesi\u00f3n aqu\u00ed expulsa
+    // al usuario por un error de negocio (p. ej. crear una cita con datos rechazados).
+    const body = (error?.response?.data ?? {}) as { path?: string; status?: number };
+    const isMisreportedAuthError = body.path === '/error';
+
+    if (
+      status === 401 &&
+      !isMisreportedAuthError &&
+      !isPublicPath(requestUrl) &&
+      config &&
+      !config._retried &&
+      hadSession
+    ) {
       // Reintenta una sola vez por petición (evita bucles infinitos).
       config._retried = true;
       try {

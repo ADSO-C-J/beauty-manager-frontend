@@ -18,6 +18,16 @@ import { Label } from "@components/label";
 import { Avatar, AvatarFallback } from "@components/avatar";
 import { Separator } from "@components/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@components/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@components/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/select";
 import type { UserRole } from "@modules/users/domain/models/SystemUser";
 import { roleLabels, ROLE_OPTIONS } from "@modules/users/infrastructure/mappers/userMapper";
@@ -66,7 +76,11 @@ const Users = () => {
     openEdit,
     handleClose,
     handleSubmit,
-    deleteUser,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    userToDelete,
+    isDeleting,
     filteredUsers,
     activeCount,
   } = useUsersPresenter();
@@ -289,7 +303,7 @@ const Users = () => {
                     size="sm"
                     aria-label={`Eliminar ${user.name}`}
                     className="border-red-300 text-red-500 hover:bg-red-50"
-                    onClick={() => void deleteUser(user)}
+                    onClick={() => requestDelete(user)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -299,6 +313,39 @@ const Users = () => {
           </Card>
         ))}
       </div>
+
+      {/* Advertencia antes de eliminar: el borrado no se ejecuta sin confirmación */}
+      <AlertDialog
+        open={userToDelete !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !isDeleting) cancelDelete();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este usuario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vas a eliminar a <strong>{userToDelete?.name}</strong> ({userToDelete?.email}).
+              Perderá el acceso al sistema de inmediato. Esta acción no se puede deshacer
+              desde la interfaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-[#E53E3E] hover:bg-[#C53030] text-white"
+              onClick={(e) => {
+                // Evita que el diálogo se cierre antes de terminar el borrado.
+                e.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

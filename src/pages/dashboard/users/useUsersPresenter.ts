@@ -38,6 +38,9 @@ export function useUsersPresenter() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<UserForm>(emptyForm);
   const [errors, setErrors] = useState<UserFormErrors>({});
+  /** Usuario pendiente de confirmar su borrado (null = modal cerrado). */
+  const [userToDelete, setUserToDelete] = useState<SystemUser | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadUsers = useCallback(async (isCancelled?: () => boolean) => {
     setIsLoading(true);
@@ -158,6 +161,28 @@ export function useUsersPresenter() {
     }
   };
 
+  /** Abre el modal de advertencia; el borrado real ocurre en confirmDelete. */
+  const requestDelete = (user: SystemUser) => {
+    setUserToDelete(user);
+  };
+
+  /** Cierra el modal sin borrar. */
+  const cancelDelete = () => {
+    setUserToDelete(null);
+  };
+
+  /** Elimina el usuario confirmado en el modal. */
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteUser(userToDelete);
+      setUserToDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const matchesRole = filterRole === 'all' || u.role === filterRole;
     const term = searchTerm.trim().toLowerCase();
@@ -191,6 +216,11 @@ export function useUsersPresenter() {
     handleClose,
     handleSubmit,
     deleteUser,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    userToDelete,
+    isDeleting,
     filteredUsers,
     activeCount,
     reload,

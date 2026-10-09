@@ -173,6 +173,9 @@ export function useSchedulerPresenter() {
       setSelectedSlot(null);
     } catch (err) {
       console.error("Error creando cita:", err);
+      // Propaga el error para que el modal pueda mostrar la causa al usuario
+      // en lugar de cerrarse en silencio.
+      throw err;
     }
   };
 

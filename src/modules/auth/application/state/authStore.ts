@@ -80,9 +80,24 @@ const getStoredRefreshToken = (): string | null => {
   }
 };
 
-const storedUser = getStoredUser();
+// Una sesión solo es válida si existe el token JWT. Si hay usuario pero no
+// token (estado huérfano tras un 401, un refresh fallido o un storage a medias),
+// se limpia para que el interceptor no dispare peticiones sin Authorization.
+const rawStoredUser = getStoredUser();
 const storedToken = getStoredToken();
 const storedRefreshToken = getStoredRefreshToken();
+
+if (!storedToken && rawStoredUser) {
+  // Sin token no hay sesión utilizable: se descarta el usuario almacenado.
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.error("Error clearing orphan session:", error);
+  }
+}
+const storedUser = storedToken ? rawStoredUser : null;
 
 const getErrorMessage = (error: unknown): string => {
   if (typeof error === "object" && error !== null) {
@@ -118,7 +133,7 @@ const clearSession = () => {
 export const useAuthStore = create<AuthState>((set) => ({
   user: storedUser,
   token: storedToken,
-  refreshToken: storedRefreshToken,
+  refreshToken: storedToken ? storedRefreshToken : null,
   isLoading: false,
   isAuthenticated: storedUser !== null && storedToken !== null,
   error: null,
@@ -127,15 +142,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const auth = await loginUseCase.execute(email, password);
+      if (!auth.user) {
+        throw new Error(
+          "El servidor no devolvió los datos del usuario. Intenta de nuevo."
+        );
+      }
 
       const user: User = {
-        id: auth.user?.id ?? "",
-        name: auth.user?.name ?? email,
-        email: auth.user?.email ?? email,
-        phone: auth.user?.phone,
-        role: (auth.user?.role as UserRole) ?? "cliente",
-        avatar: auth.user?.avatar,
-        businessId: auth.user?.businessId,
+        id: auth.user.id ?? "",
+        name: auth.user.name ?? email,
+        email: auth.user.email ?? email,
+        phone: auth.user.phone,
+        role: (auth.user.role as UserRole) ?? "cliente",
+        avatar: auth.user.avatar,
+        businessId: auth.user.businessId,
       };
 
       persistSession(auth.token, user, auth.refreshToken);
@@ -162,15 +182,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Auto-login tras el registro para obtener el token JWT.
       const auth = await loginUseCase.execute(email, password);
+      if (!auth.user) {
+        throw new Error(
+          "El servidor no devolvió los datos del usuario. Intenta de nuevo."
+        );
+      }
 
       const user: User = {
-        id: auth.user?.id ?? "",
-        name: auth.user?.name ?? name,
-        email: auth.user?.email ?? email,
-        phone: auth.user?.phone,
-        role: (auth.user?.role as UserRole) ?? "cliente",
-        avatar: auth.user?.avatar,
-        businessId: auth.user?.businessId,
+        id: auth.user.id ?? "",
+        name: auth.user.name ?? name,
+        email: auth.user.email ?? email,
+        phone: auth.user.phone,
+        role: (auth.user.role as UserRole) ?? "cliente",
+        avatar: auth.user.avatar,
+        businessId: auth.user.businessId,
       };
 
       persistSession(auth.token, user, auth.refreshToken);

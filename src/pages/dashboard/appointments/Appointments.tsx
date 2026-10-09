@@ -188,8 +188,9 @@ const Appointments = () => {
                         <SelectValue placeholder="Selecciona hora" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: 20 }, (_, i) => i + 8).map((hour) => {
-                          // El backend exige HH:mm con dos dígitos (ISO): "08:00", no "8:00".
+                        {Array.from({ length: 13 }, (_, i) => i + 8).map((hour) => {
+                          // Rango 08:00–20:00 (igual que el scheduler). El backend
+                          // exige HH:mm con dos dígitos (ISO): "08:00", no "8:00".
                           const value = `${String(hour).padStart(2, "0")}:00`;
                           return (
                             <SelectItem key={value} value={value}>
