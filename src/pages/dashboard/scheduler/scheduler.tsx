@@ -7,7 +7,7 @@ export default function Scheduler() {
   const {
     stylists, selectedStylist, setSelectedStylist,
     weekDays, timeSlots, filteredAppointments,
-    modalOpen, selectedSlot, loading,
+    modalOpen, selectedSlot, loading, slotError,
     goToPrevWeek, goToNextWeek, goToToday,
     handleSlotClick,
     addAppointment, closeModal,
@@ -23,6 +23,12 @@ export default function Scheduler() {
             : "Selecciona un estilista para ver su agenda"}
         </p>
       </div>
+
+        {slotError && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
+            {slotError}
+          </div>
+        )}
 
       <div className="flex gap-4">
         <StylistSidebar

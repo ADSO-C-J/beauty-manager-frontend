@@ -1,8 +1,8 @@
 import type { Service, ServiceCategory } from '../../domain/models/Service';
 
 // Estructura que devuelve el backend (ServiceResponseDTO).
-// Nota: el backend no expone category ni is_popular en la respuesta,
-// por lo que se manejan como opcionales y se aplican valores por defecto.
+// category e is_popular se agregaron al DTO del backend; se mantienen opcionales
+// con valores por defecto para tolerar respuestas de versiones anteriores.
 export interface ApiService {
   id: string;
   name: string;

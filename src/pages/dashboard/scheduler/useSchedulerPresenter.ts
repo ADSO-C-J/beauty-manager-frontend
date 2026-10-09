@@ -67,6 +67,8 @@ export function useSchedulerPresenter() {
     stylistName: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  /** Aviso al intentar agendar con un estilista sin ficha de personal. */
+  const [slotError, setSlotError] = useState<string | null>(null);
 
   // Cargar estilistas al montar (usar servicio de staff)
   useEffect(() => {
@@ -120,7 +122,11 @@ export function useSchedulerPresenter() {
   // staffId para que el filtro no quede vacío.
   const filteredAppointments = useMemo(() => {
     if (!selectedStylist) return [];
-    const staffId = selectedStylist.staffId ?? selectedStylist.id;
+    // Sin staffId no hay citas posibles para esté estilista: su id de usuario no
+    // coincide con el staffId almacenado en las citas, así que devolver [] es
+    // lo correcto (antes se comparaba contra el id de usuario y nunca coincidía).
+    const staffId = selectedStylist.staffId;
+    if (!staffId) return [];
     return appointments.filter((apt) => apt.stylistId === staffId);
   }, [appointments, selectedStylist]);
 
@@ -155,10 +161,21 @@ export function useSchedulerPresenter() {
   // Evento del click en un slot disponible
   const handleSlotClick = (date: string, time: string) => {
     if (!selectedStylist) return;
+    // Un estilista sin `staffId` no tiene registro en la tabla staff y el backend
+    // no puede agendarlo (devolvería 404). Mejor avisar que enviar el id de usuario,
+    // que no es un staff válido.
+    const staffId = selectedStylist.staffId;
+    if (!staffId) {
+      setSlotError(
+        `${selectedStylist.name} no tiene ficha de personal asignada; no se pueden agendar citas con este estilista.`
+      );
+      return;
+    }
+    setSlotError(null);
     setSelectedSlot({
       date,
       time,
-      stylistId: selectedStylist.staffId ?? selectedStylist.id,
+      stylistId: staffId,
       stylistName: selectedStylist.name,
     });
     setModalOpen(true);
@@ -196,6 +213,7 @@ export function useSchedulerPresenter() {
     modalOpen,
     selectedSlot,
     loading,
+    slotError,
 
     // Setter
     setSelectedStylist,

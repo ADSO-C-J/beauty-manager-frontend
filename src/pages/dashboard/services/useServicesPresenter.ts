@@ -64,6 +64,10 @@ export const useServicesPresenter = () => {
   // Detail modal
   const [detailService, setDetailService] = useState<Service | null>(null);
 
+  // Delete confirmation modal
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     serviceService
@@ -171,15 +175,31 @@ export const useServicesPresenter = () => {
     }
   };
 
-  const deleteService = async (id: string) => {
+  /** Abre el modal de confirmación; el borrado real ocurre en confirmDelete. */
+  const requestDelete = (service: Service) => {
+    setServiceToDelete(service);
+  };
+
+  /** Cierra el modal sin borrar. */
+  const cancelDelete = () => {
+    setServiceToDelete(null);
+  };
+
+  /** Elimina el servicio confirmado en el modal (DELETE /api/services/{id}). */
+  const confirmDelete = async () => {
+    if (!serviceToDelete) return;
+    setIsDeleting(true);
     try {
-      await serviceService.deleteService(id);
-      setServiceList((prev) => prev.filter((s) => s.id !== id));
-      setDetailService((prev) => (prev?.id === id ? null : prev));
+      await serviceService.deleteService(serviceToDelete.id);
+      setServiceList((prev) => prev.filter((s) => s.id !== serviceToDelete.id));
+      setDetailService((prev) => (prev?.id === serviceToDelete.id ? null : prev));
+      setServiceToDelete(null);
       toast.success("Servicio eliminado");
     } catch (err) {
       console.error("Error eliminando servicio:", err);
       toast.error("No se pudo eliminar el servicio");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -197,7 +217,11 @@ export const useServicesPresenter = () => {
     detailService,
     activeCategory,
     handleCloseForm,
-    deleteService,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    serviceToDelete,
+    isDeleting,
     setDetailService,
     filteredServices,
     setActiveCategory,

@@ -44,6 +44,12 @@ export const statusLabels: Record<PaymentStatus, string> = {
   fallido: 'Fallido',
 };
 
+/** Traduce el error de la API a un mensaje legible para el usuario. */
+function extractErrorMessage(err: unknown, fallback: string): string {
+  const response = (err as { response?: { data?: { message?: string } } })?.response;
+  return response?.data?.message ?? (err instanceof Error ? err.message : null) ?? fallback;
+}
+
 // Rango amplio para poblar el selector de citas: desde 2 años atrás hasta 1 año adelante.
 // El backend exige LocalDateTime ISO completo (YYYY-MM-DDThh:mm:ss), no solo la fecha.
 function appointmentRange(): { dateFrom: string; dateTo: string } {
@@ -69,6 +75,10 @@ export function usePaymentsPresenter() {
   const [form, setForm] = useState<PaymentForm>(emptyForm);
   const [errors, setErrors] = useState<PaymentFormErrors>({});
   const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
+
+  // Delete confirmation modal
+  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadPayments = useCallback(async (isCancelled?: () => boolean) => {
     setIsLoading(true);
@@ -172,18 +182,34 @@ export function usePaymentsPresenter() {
       });
       setPayments((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       setDetailPayment((prev) => (prev && prev.id === updated.id ? updated : prev));
-    } catch {
-      setError('No se pudo actualizar el pago');
+    } catch (err) {
+      setError(extractErrorMessage(err, 'No se pudo actualizar el pago'));
     }
   };
 
-  const destructiveDelete = async (id: string) => {
+  /** Abre el modal de confirmación; el borrado real ocurre en confirmDelete. */
+  const requestDelete = (payment: Payment) => {
+    setPaymentToDelete(payment);
+  };
+
+  /** Cierra el modal sin borrar. */
+  const cancelDelete = () => {
+    setPaymentToDelete(null);
+  };
+
+  /** Elimina el pago confirmado en el modal (DELETE /api/payments/{id}). */
+  const confirmDelete = async () => {
+    if (!paymentToDelete) return;
+    setIsDeleting(true);
     try {
-      await paymentService.deletePayment(id);
-      setPayments((prev) => prev.filter((p) => p.id !== id));
+      await paymentService.deletePayment(paymentToDelete.id);
+      setPayments((prev) => prev.filter((p) => p.id !== paymentToDelete.id));
       setDetailPayment(null);
-    } catch {
-      setError('No se pudo eliminar el pago');
+      setPaymentToDelete(null);
+    } catch (err) {
+      setError(extractErrorMessage(err, 'No se pudo eliminar el pago'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -226,7 +252,11 @@ export function usePaymentsPresenter() {
     handleClose,
     handleSubmit,
     changeStatus,
-    deletePayment: destructiveDelete,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    paymentToDelete,
+    isDeleting,
     reload,
     filteredPayments,
     totalPaid,

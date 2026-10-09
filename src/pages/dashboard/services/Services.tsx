@@ -4,6 +4,16 @@ import { Button } from "@components/button";
 import { Card, CardContent } from "@components/card";
 import { Badge } from "@components/badge";
 import { Checkbox } from "@components/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@components/alert-dialog";
 import { useServicesPresenter, SERVICE_CATEGORIES } from "./useServicesPresenter";
 import { useServiceStaffPresenter } from "./useServiceStaffPresenter";
 import type { ServiceCategory } from "@modules/services/domain/models/Service";
@@ -35,7 +45,11 @@ const Services = () => {
     detailService,
     activeCategory,
     handleCloseForm,
-    deleteService,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    serviceToDelete,
+    isDeleting,
     setDetailService,
     filteredServices,
     setActiveCategory,
@@ -351,11 +365,7 @@ const Services = () => {
                 <Button
                   variant="outline"
                   className="flex-1 text-[#E53E3E] hover:bg-red-50"
-                  onClick={() => {
-                    if (window.confirm(`¿Eliminar el servicio "${detailService.name}"?`)) {
-                      deleteService(detailService.id);
-                    }
-                  }}
+                  onClick={() => requestDelete(detailService)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Eliminar
@@ -374,6 +384,38 @@ const Services = () => {
           </div>
         </div>
       )}
+
+      {/* Advertencia antes de eliminar: el borrado no se ejecuta sin confirmación */}
+      <AlertDialog
+        open={serviceToDelete !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !isDeleting) cancelDelete();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este servicio?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vas a eliminar <strong>{serviceToDelete?.name}</strong> de la lista de
+              servicios del salón. Esta acción no se puede deshacer desde la interfaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-[#E53E3E] hover:bg-[#C53030] text-white"
+              onClick={(e) => {
+                // Evita que el diálogo se cierre antes de terminar el borrado.
+                e.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

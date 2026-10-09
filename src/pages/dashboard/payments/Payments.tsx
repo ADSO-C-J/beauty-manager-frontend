@@ -17,6 +17,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@components/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@components/alert-dialog';
 import { Input } from '@components/input';
 import { Label } from '@components/label';
 import {
@@ -80,7 +90,11 @@ const Payments = () => {
     handleClose,
     handleSubmit,
     changeStatus,
-    deletePayment,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    paymentToDelete,
+    isDeleting,
     filteredPayments,
     totalPaid,
     totalPending,
@@ -415,7 +429,7 @@ const Payments = () => {
                 <Button
                   variant="outline"
                   className="flex-1 border-red-300 text-red-500 hover:bg-red-50"
-                  onClick={() => void deletePayment(detailPayment.id)}
+                  onClick={() => requestDelete(detailPayment)}
                 >
                   Eliminar
                 </Button>
@@ -424,6 +438,40 @@ const Payments = () => {
           </div>
         </div>
       )}
+
+      {/* Advertencia antes de eliminar: el borrado no se ejecuta sin confirmación */}
+      <AlertDialog
+        open={paymentToDelete !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !isDeleting) cancelDelete();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este pago?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vas a eliminar un pago de{' '}
+              <strong>{paymentToDelete ? formatCurrency(paymentToDelete.amount) : ''}</strong>{' '}
+              ({paymentToDelete ? methodLabels[paymentToDelete.method] : ''}). Esta acción
+              no se puede deshacer desde la interfaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-[#E53E3E] hover:bg-[#C53030] text-white"
+              onClick={(e) => {
+                // Evita que el diálogo se cierre antes de terminar el borrado.
+                e.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {isDeleting ? 'Eliminando...' : 'Sí, eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
