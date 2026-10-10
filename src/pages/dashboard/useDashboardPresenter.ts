@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
 import { reportService } from "@modules/reports/application/reportServices";
 import { appointmentService } from "@modules/appointments/application/appointmentServices";
+import { scopeAppointmentsToUser } from "@modules/appointments/application/appointmentScope";
 import { facialAnalysisService, resolveClientIdByEmail } from "@modules/facial-analysis/application/facialAnalysisServices";
 import type { ReportMetrics } from "@modules/reports/domain/models/Report";
 import type { Appointment } from "@modules/appointments/domain/models/Appointment";
@@ -68,7 +69,11 @@ export const useDashboardPresenter = () => {
       ? await resolveClientIdByEmail(user?.email)
       : null;
     const [metricsRes, appointmentsRes, analysesRes] = await Promise.allSettled([
-      reportService.getMetrics("month"),
+      // El panel de cliente no muestra métricas del negocio (ingresos, tasa de
+      // cancelación...), así que ni siquiera se piden: no son datos suyos.
+      user?.role === "cliente"
+        ? Promise.resolve<ReportMetrics | null>(null)
+        : reportService.getMetrics("month"),
       appointmentService.getAppointments(dateFrom, dateTo),
       clientId
         ? facialAnalysisService.getAnalyses(clientId)
@@ -81,7 +86,11 @@ export const useDashboardPresenter = () => {
       setError("No se pudieron cargar las métricas");
     }
     if (appointmentsRes.status === "fulfilled") {
-      setRecentAppointments(appointmentsRes.value.slice(0, 5).map(toRecentAppointment));
+      // El endpoint devuelve TODAS las citas del negocio: aquí se limita a las
+      // que le tocan al usuario (cliente/estilista solo las suyas).
+      const visible = await scopeAppointmentsToUser(appointmentsRes.value, user);
+      if (isCancelled?.()) return;
+      setRecentAppointments(visible.slice(0, 5).map(toRecentAppointment));
     }
     if (analysesRes.status === "fulfilled") {
       setFacialAnalysisCount(analysesRes.value.length);

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router";
+import { useAuthStore } from "@modules/auth/application/state/authStore";
 import { appointmentService } from "@modules/appointments/application/appointmentServices";
+import { scopeAppointmentsToUser } from "@modules/appointments/application/appointmentScope";
 import { serviceService } from "@modules/services/application/serviceServices";
 import { staffService } from "@modules/staff/application/staffServices";
 import { clientService } from "@modules/clients/application/clientServices";
@@ -64,6 +66,7 @@ function apiErrorMessage(error: unknown, fallback: string): string {
 
 export const useAppointmentsPresenter = () => {
   const location = useLocation();
+  const user = useAuthStore((state) => state.user);
   const [appointmentList, setAppointmentList] = useState<AppointmentView[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
@@ -113,14 +116,18 @@ export const useAppointmentsPresenter = () => {
       const { dateFrom, dateTo } = appointmentRange();
       const data = await appointmentService.getAppointments(dateFrom, dateTo);
       if (isCancelled?.()) return;
-      setAppointmentList(data.map(toView));
+      // El endpoint devuelve TODAS las citas del negocio: clientes y estilistas
+      // solo deben ver las suyas (administrador y recepción ven todas).
+      const visible = await scopeAppointmentsToUser(data, user);
+      if (isCancelled?.()) return;
+      setAppointmentList(visible.map(toView));
     } catch {
       if (isCancelled?.()) return;
       setError("No se pudieron cargar las citas");
     } finally {
       if (!isCancelled?.()) setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let cancelled = false;
