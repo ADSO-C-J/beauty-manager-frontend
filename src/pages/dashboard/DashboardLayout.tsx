@@ -104,11 +104,11 @@ export default function DashboardLayout() {
     <div className="min-h-screen bg-[#F7FAFC]">
       {/* Desktop sidebar */}
       <div className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
+        <div className="flex flex-col flex-grow bg-white border-r border-gray-200 min-h-0">
           <div className="flex items-center h-16 px-6 border-b border-gray-200">
             <span className="text-2xl font-semibold text-[#2D3748]">BeautyManager</span>
           </div>
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto min-h-0">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -208,7 +208,7 @@ export default function DashboardLayout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <div className="fixed inset-y-0 left-0 w-[min(16rem,80vw)] bg-white flex flex-col shadow-xl">
+          <div className="fixed inset-y-0 left-0 w-[min(16rem,80vw)] bg-white flex flex-col shadow-xl min-h-0">
             <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 shrink-0">
               <span className="text-lg font-semibold text-[#2D3748]">BeautyManager</span>
               <Button
@@ -220,7 +220,7 @@ export default function DashboardLayout() {
                 <X className="w-6 h-6" />
               </Button>
             </div>
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto min-h-0">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
