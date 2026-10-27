@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useAuthStore } from "@modules/auth/application/state/authStore";
+import { resolveClientIdByEmail } from "@modules/facial-analysis/application/facialAnalysisServices";
 import { appointmentService } from "@modules/appointments/application/appointmentServices";
 import { scopeAppointmentsToUser } from "@modules/appointments/application/appointmentScope";
 import { serviceService } from "@modules/services/application/serviceServices";
@@ -97,16 +98,33 @@ export const useAppointmentsPresenter = () => {
 
   // Catálogos (servicios, estilistas, clientes) para los selectores.
   const loadCatalogs = useCallback(async (isCancelled?: () => boolean) => {
-    const [servicesRes, stylistsRes, clientsRes] = await Promise.allSettled([
-      serviceService.getServices(),
-      staffService.getStylists(),
-      clientService.searchClients(""),
+    // Un cliente solo puede agendar para sí mismo: en el selector debe aparecer
+    // únicamente su propia ficha (administrador y recepción ven todas).
+    const isClient = user?.role === "cliente";
+    const [servicesRes, stylistsRes, clientsRes, ownClientId] = await Promise.all([
+      serviceService.getServices().then(
+        (value) => ({ status: "fulfilled", value }) as const,
+        () => ({ status: "rejected" }) as const,
+      ),
+      staffService.getStylists().then(
+        (value) => ({ status: "fulfilled", value }) as const,
+        () => ({ status: "rejected" }) as const,
+      ),
+      clientService.searchClients("").then(
+        (value) => ({ status: "fulfilled", value }) as const,
+        () => ({ status: "rejected" }) as const,
+      ),
+      isClient ? resolveClientIdByEmail(user?.email) : Promise.resolve(null),
     ]);
     if (isCancelled?.()) return;
     if (servicesRes.status === "fulfilled") setServices(servicesRes.value);
     if (stylistsRes.status === "fulfilled") setStylists(stylistsRes.value);
-    if (clientsRes.status === "fulfilled") setClients(clientsRes.value);
-  }, []);
+    if (clientsRes.status === "fulfilled") {
+      const all = clientsRes.value;
+      // Si no se puede resolver su ficha, no se expone la de terceros.
+      setClients(isClient ? all.filter((c) => c.id === ownClientId) : all);
+    }
+  }, [user]);
 
   // Citas del backend.
   const loadAppointments = useCallback(async (isCancelled?: () => boolean) => {
@@ -156,7 +174,9 @@ export const useAppointmentsPresenter = () => {
   /** Abre el formulario en modo creación (limpio). */
   const openCreate = () => {
     setEditingId(null);
-    setForm(emptyForm);
+    // Para un cliente el único cliente posible es él mismo: se preselecciona.
+    const self = user?.role === "cliente" && clients.length === 1 ? clients[0] : null;
+    setForm(self ? { ...emptyForm, clientId: self.id, client: self.name } : emptyForm);
     setErrors({});
     setDate(new Date());
     setOpen(true);
